@@ -58,7 +58,7 @@ archive_builtin()
 	if [ -n "${CONFIG_THIN_ARCHIVES}" ]; then
 		info AR built-in.o
 		rm -f built-in.o;
-		${AR} rcsTP${KBUILD_ARFLAGS} built-in.o			\
+		${AR} rcs${KBUILD_ARFLAGS} built-in.o			\
 					${KBUILD_VMLINUX_INIT}		\
 					${KBUILD_VMLINUX_MAIN}
 	fi
@@ -195,7 +195,7 @@ cleanup()
 	rm -f .tmp_System.map
 	rm -f .tmp_kallsyms*
 	rm -f .tmp_vmlinux*
-	rm -f built-in.o
+#	rm -f built-in.o
 	rm -f System.map
 	rm -f vmlinux
 	rm -f vmlinux.o
