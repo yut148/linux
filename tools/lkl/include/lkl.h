@@ -73,10 +73,13 @@ static inline int lkl_sys_fstatfs(unsigned int fd, struct lkl_statfs *buf)
 static inline long long lkl_sys_lseek(unsigned int fd, __lkl__kernel_loff_t off,
 				      unsigned int whence)
 {
+        /*
 	long long res;
 	long ret = lkl_sys_llseek(fd, off >> 32, off & 0xffffffff, &res, whence);
 
 	return ret < 0 ? ret : res;
+        */
+        return 0;
 }
 #endif
 

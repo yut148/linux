@@ -81,7 +81,7 @@ quiet_cmd_gen = GEN      $@
 # If there's nothing to link, create empty $@ object.
 quiet_cmd_ld_multi = LD       $@
       cmd_ld_multi = $(if $(strip $(obj-y)),\
-                     $(LD) -r -o $@  $(filter $(obj-y),$^),rm -f $@; $(AR) rcs $@)
+                     llvm-link -o $@  $(filter $(obj-y),$^),rm -f $@; $(AR) rcs $@)
 
 quiet_cmd_host_ld_multi = HOSTLD   $@
       cmd_host_ld_multi = $(if $(strip $(obj-y)),\
