@@ -306,6 +306,8 @@ static long _gettid(void)
 {
 #ifdef	__FreeBSD__
 	return (long)pthread_self();
+#elif EMSCRIPTEN
+        return 0;
 #else
 	return syscall(SYS_gettid);
 #endif
