@@ -16,4 +16,4 @@ llvm-dis -o js/libc.ll js/libc.bc
 echo "PY rename_symbols.py"
 python rename_symbols.py tools/lkl/tests/boot-mod.ll tools/lkl/tests/boot-mod2.ll
 echo "EMCC boot.js"
-EMCC_DEBUG=1 emcc -o js/boot.html tools/lkl/tests/boot-mod2.ll -s EMULATE_FUNCTION_POINTER_CASTS=1 -s PTHREAD_POOL_SIZE=16 -s USE_PTHREADS=1 -s TOTAL_MEMORY=671088640 -s ALLOW_MEMORY_GROWTH=1 -v
+EMCC_DEBUG=1 emcc -o js/boot.html tools/lkl/tests/boot-mod2.ll -s EMULATE_FUNCTION_POINTER_CASTS=1 -s PTHREAD_POOL_SIZE=16 -s USE_PTHREADS=1 -s TOTAL_MEMORY=1342177280 -s ALLOW_MEMORY_GROWTH=1 -v
