@@ -22,32 +22,24 @@
  */
 #pragma once
 
-#include <Protocol/Cpu.h>
-
 __BEGIN_CDECLS;
 
 extern int ints_enabled;
 extern int fiqs_enabled;
-extern EFI_CPU_ARCH_PROTOCOL *gCpu;
 
 static inline void arch_enable_ints(void)
 {
-    //ints_enabled = 1;
-    gCpu->EnableInterrupt(gCpu);
+    ints_enabled = 1;
 }
 
 static inline void arch_disable_ints(void)
 {
-    //ints_enabled = 0;
-    gCpu->DisableInterrupt(gCpu);
+    ints_enabled = 0;
 }
 
 static inline bool arch_ints_disabled(void)
 {
-    //return !ints_enabled;
-    BOOLEAN state = TRUE;
-    gCpu->GetInterruptState(gCpu, &state);
-    return !state;
+    return !ints_enabled;
 }
 
 static inline void arch_enable_fiqs(void)
