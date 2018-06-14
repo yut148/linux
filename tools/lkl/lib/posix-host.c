@@ -267,6 +267,35 @@ static void lkl_mutex_free(struct lkl_mutex *_mutex)
 	free(_mutex);
 }
 
+#ifdef __FIBER__
+static volatile lk_time_t ticks = 0;
+
+void lkl_timer_callback(void)
+{
+        ticks += 10;
+        if (thread_timer_tick()==INT_RESCHEDULE)
+                thread_preempt();
+}
+
+lk_time_t current_time(void)
+{
+        return ticks;
+}
+
+lk_bigtime_t current_time_hires(void)
+{
+        return (lk_bigtime_t)ticks * 1000;
+}
+
+void lkl_thread_init(void)
+{
+        thread_init_early();
+        thread_init();
+        thread_set_priority(DEFAULT_PRIORITY);
+        /* TODO: Set up timer */
+}
+#endif
+
 static lkl_thread_t lkl_thread_create(void (*fn)(void *), void *arg)
 {
 #ifdef __FIBER__
