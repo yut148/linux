@@ -82,6 +82,7 @@ struct lkl_tls_key {
 			lkl_printf("%s: %s\n", #exp, strerror(errno));	\
 	} while (0)
 
+#ifndef __FIBER__
 static int _warn_pthread(int ret, char *str_exp)
 {
 	if (ret > 0)
@@ -93,6 +94,7 @@ static int _warn_pthread(int ret, char *str_exp)
 
 /* pthread_* functions use the reverse convention */
 #define WARN_PTHREAD(exp) _warn_pthread(exp, #exp)
+#endif /* __FIBER__ */
 
 static struct lkl_sem *lkl_sem_alloc(int count)
 {
