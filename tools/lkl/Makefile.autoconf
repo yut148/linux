@@ -27,6 +27,7 @@ endef
 
 define fiber_host
   $(call set_autoconf_var,FIBER,y)
+  LDFLAGS += -lrt
 endef
 
 define virtio_net_dpdk
@@ -51,12 +52,12 @@ endef
 define posix_host
   $(call set_autoconf_var,POSIX,y)
   $(call set_autoconf_var,VIRTIO_NET,y)
-  LDFLAGS += -pie
+  LDFLAGS += -pie -pthread
   CFLAGS += -fPIC
   SOSUF := .so
   $(if $(call is_defined,__ANDROID__),$(call android_host),LDLIBS += -lrt -lpthread)
   $(if $(filter $(1),elf64-x86-64-freebsd),$(call bsd_host))
-  $(if $(call is_defined,__FIBER__),$(call fiber_host) else CFLAGS += -pthread)
+  $(if $(call is_defined,__FIBER__),$(call fiber_host))
   $(if $(filter yes,$(dpdk)),$(call virtio_net_dpdk))
   $(if $(filter yes,$(vde)),$(call virtio_net_vde))
   $(if $(strip $(call find_include,fuse.h)),$(call set_autoconf_var,FUSE,y))
