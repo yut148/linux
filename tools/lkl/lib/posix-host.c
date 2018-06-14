@@ -141,7 +141,7 @@ static void lkl_sem_free(struct lkl_sem *sem)
 static void lkl_sem_up(struct lkl_sem *sem)
 {
 #ifdef __FIBER__
-        sem_up(&sem->sem, 1);
+        sem_post(&sem->sem, 1);
 #else
 #ifdef _POSIX_SEMAPHORES
 	WARN_UNLESS(sem_post(&sem->sem));
@@ -187,16 +187,14 @@ static struct lkl_mutex *lkl_mutex_alloc(int recursive)
 {
 	struct lkl_mutex *_mutex = malloc(sizeof(struct lkl_mutex));
 #ifdef __FIBER__
-        if (!mutex)
+        if (!_mutex)
                 return NULL;
 
         if (recursive)
-                mutex_init(&mutex->mutex);
+                mutex_init(&_mutex->mutex);
         else
-                sem_init(&mutex->sem, 1);
-        mutex->recursive = recursive;
-
-        return mutex;
+                sem_init(&_mutex->sem, 1);
+        _mutex->recursive = recursive;
 #else 
 	pthread_mutex_t *mutex = NULL;
 	pthread_mutexattr_t attr;
@@ -220,8 +218,8 @@ static struct lkl_mutex *lkl_mutex_alloc(int recursive)
 
 	WARN_PTHREAD(pthread_mutex_init(mutex, &attr));
 
-	return _mutex;
 #endif /* __FIBER__ */
+	return _mutex;
 }
 
 static void lkl_mutex_lock(struct lkl_mutex *mutex)
@@ -259,7 +257,7 @@ static void lkl_mutex_free(struct lkl_mutex *_mutex)
 {
 #ifdef __FIBER__
         if (_mutex->recursive)
-                mutex_destroy(&mutex->mutex);
+                mutex_destroy(&_mutex->mutex);
         else
                 sem_destroy(&_mutex->sem);
 #else
@@ -294,19 +292,43 @@ void lkl_thread_init(void)
         thread_init_early();
         thread_init();
         thread_set_priority(DEFAULT_PRIORITY);
-        /* TODO: Set up timer */
+
+        sigact.sa_sigaction = lkl_timer_callback;
+        sigact.sa_flags = SA_SIGINFO | SA_RESTART;
+        sigemptyset(&sigact.sa_mask);
+        if (sigaction(SIGRTMIN + 1, &sigact, NULL) < 0) {
+                perror("sigaction error");
+                exit(1);
+        }
+
+        sigevp.sigev_notify = SIGEV_SIGNAL;
+        sigevp.sigev_signo = SIGRTMIN + 1;
+        if (timer_create(CLOCK_REALTIME, &sigevp, &timerid) < 0) {
+                perror("timer_create error");
+                exit(1);
+
+        }
+
+        ispec.it_interval.tv_sec = 0;
+        ispec.it_interval.tv_nsec = 10000000;
+        ispec.it_value.tv_sec = 0;
+        ispec.it_value.tv_nsec = 10000000;
+        if (timer_settime(timerid, 0, &ispec, NULL) < 0) {
+                perror("timer_settime error");
+                exit(1);
+        }
 }
 #endif
 
 static lkl_thread_t lkl_thread_create(void (*fn)(void *), void *arg)
 {
 #ifdef __FIBER__
-        thread_t *thread = thread_create("lkl", (int (*)(void *))fn, arg, DEFAULT_PRIORITY, 2*1024*1024);
+        thread_t *thread = thread_create("lkl", (void* (*)(void *))fn, arg, DEFAULT_PRIORITY, 2*1024*1024);
         if (!thread)
                 return 0;
         else {
                 thread_resume(thread);
-                return (lkl_thread_t) threadl
+                return (lkl_thread_t) thread;
         }
 #else
 	pthread_t thread;
