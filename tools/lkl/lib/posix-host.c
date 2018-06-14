@@ -299,6 +299,7 @@ void lkl_thread_init(void)
 {
         thread_init_early();
         thread_init();
+        thread_create_idle();
         thread_set_priority(DEFAULT_PRIORITY);
 
         sigact.sa_sigaction = lkl_timer_callback;
@@ -320,7 +321,7 @@ void lkl_thread_init(void)
         ispec.it_interval.tv_sec = 0;
         ispec.it_interval.tv_nsec = 10000000;
         ispec.it_value.tv_sec = 0;
-        ispec.it_value.tv_nsec = 10000000;
+        ispec.it_value.tv_nsec = 0;
         if (timer_settime(timerid, 0, &ispec, NULL) < 0) {
                 perror("timer_settime error");
                 exit(1);
@@ -331,7 +332,7 @@ void lkl_thread_init(void)
 static lkl_thread_t lkl_thread_create(void (*fn)(void *), void *arg)
 {
 #ifdef __FIBER__
-        thread_t *thread = thread_create("lkl", (void* (*)(void *))fn, arg, DEFAULT_PRIORITY, 2*1024*1024);
+        thread_t *thread = thread_create("lkl", (int (*)(void *))fn, arg, DEFAULT_PRIORITY, 2*1024*1024);
         if (!thread)
                 return 0;
         else {
