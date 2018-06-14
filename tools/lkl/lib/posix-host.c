@@ -51,13 +51,13 @@ struct lkl_mutex {
 #else
        int recursive;
        mutex_t mutex;
-       semaphre_t sem;
+       semaphore_t sem;
 #endif
 };
 
 struct lkl_sem {
 #ifdef __FIBER__
-        semaphre_t sem;
+        semaphore_t sem;
 #else
 #ifdef _POSIX_SEMAPHORES
 	sem_t sem;
