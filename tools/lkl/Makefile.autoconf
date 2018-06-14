@@ -25,6 +25,10 @@ define bsd_host
   $(call set_autoconf_var,BSD,y)
 endef
 
+define fiber_host
+  $(call set_autoconf_var,FIBER,y)
+endef
+
 define virtio_net_dpdk
   $(call set_autoconf_var,VIRTIO_NET_DPDK,y)
   RTE_SDK ?= $(OUTPUT)/dpdk-17.02
@@ -48,10 +52,11 @@ define posix_host
   $(call set_autoconf_var,POSIX,y)
   $(call set_autoconf_var,VIRTIO_NET,y)
   LDFLAGS += -pie
-  CFLAGS += -fPIC -pthread
+  CFLAGS += -fPIC
   SOSUF := .so
   $(if $(call is_defined,__ANDROID__),$(call android_host),LDLIBS += -lrt -lpthread)
   $(if $(filter $(1),elf64-x86-64-freebsd),$(call bsd_host))
+  $(if $(call is_defined,__FIBER__),$(call fiber_host) else CFLAGS += -pthread)
   $(if $(filter yes,$(dpdk)),$(call virtio_net_dpdk))
   $(if $(filter yes,$(vde)),$(call virtio_net_vde))
   $(if $(strip $(call find_include,fuse.h)),$(call set_autoconf_var,FUSE,y))

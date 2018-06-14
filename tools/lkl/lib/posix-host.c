@@ -1,4 +1,12 @@
+#ifdef __FIBER__
+#include <lk/kernel/semaphore.h>
+#include <lk/kernel/mutex.h>
+#include <lk/kernel/thread.h>
+#include <lk/kernel/event.h>
+#else
 #include <pthread.h>
+#endif
+
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
@@ -21,12 +29,14 @@
 /* Let's see if the host has semaphore.h */
 #include <unistd.h>
 
+#ifndef __FIBER__
 #ifdef _POSIX_SEMAPHORES
 #include <semaphore.h>
 /* TODO(pscollins): We don't support fork() for now, but maybe one day
  * we will? */
 #define SHARE_SEM 0
 #endif /* _POSIX_SEMAPHORES */
+#endif /* __FIBER__ */
 
 static void print(const char *str, int len)
 {
@@ -36,10 +46,19 @@ static void print(const char *str, int len)
 }
 
 struct lkl_mutex {
-	pthread_mutex_t mutex;
+#ifndef __FIBER__
+       pthread_mutex_t mutex;
+#else
+       int recursive;
+       mutex_t mutex;
+       semaphre_t sem;
+#endif
 };
 
 struct lkl_sem {
+#ifdef __FIBER__
+        semaphre_t sem;
+#else
 #ifdef _POSIX_SEMAPHORES
 	sem_t sem;
 #else
@@ -47,10 +66,15 @@ struct lkl_sem {
 	int count;
 	pthread_cond_t cond;
 #endif /* _POSIX_SEMAPHORES */
+#endif /* __FIBER__ */
 };
 
 struct lkl_tls_key {
+#ifndef __FIBER__
 	pthread_key_t key;
+#else
+        int key; /* dummy */
+#endif
 };
 
 #define WARN_UNLESS(exp) do {						\
@@ -70,7 +94,7 @@ static int _warn_pthread(int ret, char *str_exp)
 /* pthread_* functions use the reverse convention */
 #define WARN_PTHREAD(exp) _warn_pthread(exp, #exp)
 
-static struct lkl_sem *sem_alloc(int count)
+static struct lkl_sem *lkl_sem_alloc(int count)
 {
 	struct lkl_sem *sem;
 
@@ -78,6 +102,9 @@ static struct lkl_sem *sem_alloc(int count)
 	if (!sem)
 		return NULL;
 
+#ifdef __FIBER__
+        sem_init(&sem->sem, count);
+#else
 #ifdef _POSIX_SEMAPHORES
 	if (sem_init(&sem->sem, SHARE_SEM, count) < 0) {
 		lkl_printf("sem_init: %s\n", strerror(errno));
@@ -89,23 +116,31 @@ static struct lkl_sem *sem_alloc(int count)
 	sem->count = count;
 	WARN_PTHREAD(pthread_cond_init(&sem->cond, NULL));
 #endif /* _POSIX_SEMAPHORES */
+#endif /* __FIBER__ */
 
 	return sem;
 }
 
-static void sem_free(struct lkl_sem *sem)
+static void lkl_sem_free(struct lkl_sem *sem)
 {
+#ifdef __FIBER__
+        sem_destroy(&sem->sem);
+#else
 #ifdef _POSIX_SEMAPHORES
 	WARN_UNLESS(sem_destroy(&sem->sem));
 #else
 	WARN_PTHREAD(pthread_cond_destroy(&sem->cond));
 	WARN_PTHREAD(pthread_mutex_destroy(&sem->lock));
 #endif /* _POSIX_SEMAPHORES */
+#endif /* __FIBER__ */
 	free(sem);
 }
 
-static void sem_up(struct lkl_sem *sem)
+static void lkl_sem_up(struct lkl_sem *sem)
 {
+#ifdef __FIBER__
+        sem_up(&sem->sem, 1);
+#else
 #ifdef _POSIX_SEMAPHORES
 	WARN_UNLESS(sem_post(&sem->sem));
 #else
@@ -115,11 +150,19 @@ static void sem_up(struct lkl_sem *sem)
 		WARN_PTHREAD(pthread_cond_signal(&sem->cond));
 	WARN_PTHREAD(pthread_mutex_unlock(&sem->lock));
 #endif /* _POSIX_SEMAPHORES */
+#endif /* __FIBER__ */
 
 }
 
-static void sem_down(struct lkl_sem *sem)
+static void lkl_sem_down(struct lkl_sem *sem)
 {
+#ifdef __FIBER__
+        int err;
+        do {
+                thread_yield();
+                err = sem_wait(&sem->sem);
+        } while (err < 0);
+#else
 #ifdef _POSIX_SEMAPHORES
 	int err;
 
@@ -135,11 +178,24 @@ static void sem_down(struct lkl_sem *sem)
 	sem->count--;
 	WARN_PTHREAD(pthread_mutex_unlock(&sem->lock));
 #endif /* _POSIX_SEMAPHORES */
+#endif /* __FIBER__ */
 }
 
-static struct lkl_mutex *mutex_alloc(int recursive)
+static struct lkl_mutex *lkl_mutex_alloc(int recursive)
 {
 	struct lkl_mutex *_mutex = malloc(sizeof(struct lkl_mutex));
+#ifdef __FIBER__
+        if (!mutex)
+                return NULL;
+
+        if (recursive)
+                mutex_init(&mutex->mutex);
+        else
+                sem_init(&mutex->sem, 1);
+        mutex->recursive = recursive;
+
+        return mutex;
+#else 
 	pthread_mutex_t *mutex = NULL;
 	pthread_mutexattr_t attr;
 
@@ -163,65 +219,124 @@ static struct lkl_mutex *mutex_alloc(int recursive)
 	WARN_PTHREAD(pthread_mutex_init(mutex, &attr));
 
 	return _mutex;
+#endif /* __FIBER__ */
 }
 
-static void mutex_lock(struct lkl_mutex *mutex)
+static void lkl_mutex_lock(struct lkl_mutex *mutex)
 {
+#ifdef __FIBER__
+        int err;
+
+        if (mutex->recursive)
+                mutex_acquire(&mutex->mutex);
+        else {
+                do {
+                        thread_yield();
+                        err = sem_wait(&mutex->sem);
+                } while (err < 0);
+        }
+#else
 	WARN_PTHREAD(pthread_mutex_lock(&mutex->mutex));
+#endif /* __FIBER__ */
 }
 
-static void mutex_unlock(struct lkl_mutex *_mutex)
+static void lkl_mutex_unlock(struct lkl_mutex *_mutex)
 {
+#ifdef __FIBER__
+        if (_mutex->recursive)
+                mutex_release(&_mutex->mutex);
+        else
+                sem_post(&_mutex->sem, 1);
+#else
 	pthread_mutex_t *mutex = &_mutex->mutex;
 	WARN_PTHREAD(pthread_mutex_unlock(mutex));
+#endif /* __FIBER__ */
 }
 
-static void mutex_free(struct lkl_mutex *_mutex)
+static void lkl_mutex_free(struct lkl_mutex *_mutex)
 {
+#ifdef __FIBER__
+        if (_mutex->recursive)
+                mutex_destroy(&mutex->mutex);
+        else
+                sem_destroy(&_mutex->sem);
+#else
 	pthread_mutex_t *mutex = &_mutex->mutex;
 	WARN_PTHREAD(pthread_mutex_destroy(mutex));
+#endif /* __FIBER__ */
 	free(_mutex);
 }
 
-static lkl_thread_t thread_create(void (*fn)(void *), void *arg)
+static lkl_thread_t lkl_thread_create(void (*fn)(void *), void *arg)
 {
+#ifdef __FIBER__
+        thread_t *thread = thread_create("lkl", (int (*)(void *))fn, arg, DEFAULT_PRIORITY, 2*1024*1024);
+        if (!thread)
+                return 0;
+        else {
+                thread_resume(thread);
+                return (lkl_thread_t) threadl
+        }
+#else
 	pthread_t thread;
 	if (WARN_PTHREAD(pthread_create(&thread, NULL, (void* (*)(void *))fn, arg)))
 		return 0;
 	else
 		return (lkl_thread_t) thread;
+#endif /* __FIBER__ */
 }
 
-static void thread_detach(void)
+static void lkl_thread_detach(void)
 {
+#ifdef __FIBER__
+        thread_detach(get_current_thread());
+#else
 	WARN_PTHREAD(pthread_detach(pthread_self()));
+#endif /* __FIBER__ */
 }
 
-static void thread_exit(void)
+static void lkl_thread_exit(void)
 {
+#ifdef __FIBER__
+        thread_exit(0);
+#else
 	pthread_exit(NULL);
+#endif /* __FIBER__ */
 }
 
-static int thread_join(lkl_thread_t tid)
+static int lkl_thread_join(lkl_thread_t tid)
 {
+#ifdef __FIBER__
+        if (thread_join((thread_t *)tid, NULL, INFINITE_TIME))
+#else
 	if (WARN_PTHREAD(pthread_join((pthread_t)tid, NULL)))
+#endif /* __FIBER__ */
 		return -1;
 	else
 		return 0;
 }
 
-static lkl_thread_t thread_self(void)
+static lkl_thread_t lkl_thread_self(void)
 {
+#ifdef __FIBER__
+        return (lkl_thread_t)get_current_thread();
+#else
 	return (lkl_thread_t)pthread_self();
+#endif /* __FIBER__ */
 }
 
-static int thread_equal(lkl_thread_t a, lkl_thread_t b)
+static int lkl_thread_equal(lkl_thread_t a, lkl_thread_t b)
 {
+#ifdef __FIBER__
+        return a==b;
+#else
 	return pthread_equal((pthread_t)a, (pthread_t)b);
+#endif /* __FIBER__ */
 }
 
 static struct lkl_tls_key *tls_alloc(void (*destructor)(void *))
 {
+#ifndef __FIBER__
 	struct lkl_tls_key *ret = malloc(sizeof(struct lkl_tls_key));
 
 	if (WARN_PTHREAD(pthread_key_create(&ret->key, destructor))) {
@@ -229,24 +344,39 @@ static struct lkl_tls_key *tls_alloc(void (*destructor)(void *))
 		return NULL;
 	}
 	return ret;
+#else
+        return NULL; /* dummy */
+#endif /* __FIBER__ */
 }
 
 static void tls_free(struct lkl_tls_key *key)
 {
+#ifndef __FIBER__
 	WARN_PTHREAD(pthread_key_delete(key->key));
 	free(key);
+#else
+        /* dummy */
+#endif /* __FIBER__ */
 }
 
 static int tls_set(struct lkl_tls_key *key, void *data)
 {
+#ifndef __FIBER__
 	if (WARN_PTHREAD(pthread_setspecific(key->key, data)))
 		return -1;
+#else
+        /* dummy */
+#endif /* __FIBER__ */
 	return 0;
 }
 
 static void *tls_get(struct lkl_tls_key *key)
 {
+#ifndef __FIBER__
 	return pthread_getspecific(key->key);
+#else
+        return NULL; /* dummy */
+#endif /* __FIBER__ */
 }
 
 static unsigned long long time_ns(void)
@@ -313,20 +443,20 @@ static long _gettid(void)
 
 struct lkl_host_operations lkl_host_ops = {
 	.panic = panic,
-	.thread_create = thread_create,
-	.thread_detach = thread_detach,
-	.thread_exit = thread_exit,
-	.thread_join = thread_join,
-	.thread_self = thread_self,
-	.thread_equal = thread_equal,
-	.sem_alloc = sem_alloc,
-	.sem_free = sem_free,
-	.sem_up = sem_up,
-	.sem_down = sem_down,
-	.mutex_alloc = mutex_alloc,
-	.mutex_free = mutex_free,
-	.mutex_lock = mutex_lock,
-	.mutex_unlock = mutex_unlock,
+	.thread_create = lkl_thread_create,
+	.thread_detach = lkl_thread_detach,
+	.thread_exit = lkl_thread_exit,
+	.thread_join = lkl_thread_join,
+	.thread_self = lkl_thread_self,
+	.thread_equal = lkl_thread_equal,
+	.sem_alloc = lkl_sem_alloc,
+	.sem_free = lkl_sem_free,
+	.sem_up = lkl_sem_up,
+	.sem_down = lkl_sem_down,
+	.mutex_alloc = lkl_mutex_alloc,
+	.mutex_free = lkl_mutex_free,
+	.mutex_lock = lkl_mutex_lock,
+	.mutex_unlock = lkl_mutex_unlock,
 	.tls_alloc = tls_alloc,
 	.tls_free = tls_free,
 	.tls_set = tls_set,
