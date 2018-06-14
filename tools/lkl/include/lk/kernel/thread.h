@@ -205,6 +205,7 @@ static inline bool thread_lock_held(void)
 }
 
 /* thread local storage */
+#if 0
 static inline __ALWAYS_INLINE uintptr_t tls_get(uint entry)
 {
     return get_current_thread()->tls[entry];
@@ -222,6 +223,7 @@ static inline __ALWAYS_INLINE uintptr_t __tls_set(uint entry, uintptr_t val)
         STATIC_ASSERT((e) < MAX_TLS_ENTRY); \
         __tls_set(e, v); \
     })
+#endif
 
 /* thread level statistics */
 #if THREAD_STATS
