@@ -118,7 +118,11 @@ static void init_thread_struct(thread_t *t, const char *name)
     memset(t, 0, sizeof(thread_t));
     t->magic = THREAD_MAGIC;
     thread_set_pinned_cpu(t, -1);
+#ifdef __linux__
+    strncpy(t->name, name, sizeof(t->name));
+#else
     strlcpy(t->name, name, sizeof(t->name));
+#endif
 }
 
 /**
@@ -176,7 +180,7 @@ thread_t *thread_create_etc(thread_t *t, const char *name, thread_start_routine 
     t->aspace = NULL;
 #endif
 
-    t->errno = 0;
+    t->_errno = 0;
 
     /* create the stack */
     if (!stack) {
@@ -614,8 +618,8 @@ void thread_resched(void)
 #endif
 
     /* swap errno value */
-    oldthread->errno = errno;
-    errno = newthread->errno;
+    oldthread->_errno = errno;
+    errno = newthread->_errno;
 
     /* do the low level context switch */
     arch_context_switch(oldthread, newthread);
@@ -848,7 +852,11 @@ void thread_init(void)
 void thread_set_name(const char *name)
 {
     thread_t *current_thread = get_current_thread();
+#ifdef __linux__
+    strncpy(current_thread->name, name, sizeof(current_thread->name));
+#else
     strlcpy(current_thread->name, name, sizeof(current_thread->name));
+#endif
 }
 
 /**

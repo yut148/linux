@@ -487,7 +487,7 @@ static void timer_free(void *_timer)
 	timer_delete(timer);
 }
 
-static void panic(void)
+static void lkl_panic(void)
 {
 	assert(0);
 }
@@ -502,7 +502,7 @@ static long _gettid(void)
 }
 
 struct lkl_host_operations lkl_host_ops = {
-	.panic = panic,
+	.panic = lkl_panic,
 	.thread_create = lkl_thread_create,
 	.thread_detach = lkl_thread_detach,
 	.thread_exit = lkl_thread_exit,
