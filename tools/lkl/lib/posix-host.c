@@ -268,9 +268,17 @@ static void lkl_mutex_free(struct lkl_mutex *_mutex)
 }
 
 #ifdef __FIBER__
+/*
+ * Most of the code comes from
+ * http://linux-biyori.sakura.ne.jp/program/pr_signal02.php
+ */
+static struct sigaction sigact;
+static struct sigevent sigevp;
+static struct itimerspec ispec;
+static timer_t timerid = 0;
 static volatile lk_time_t ticks = 0;
 
-void lkl_timer_callback(void)
+static void lkl_timer_callback(int signum, siginfo_t *info, void *ctx)
 {
         ticks += 10;
         if (thread_timer_tick()==INT_RESCHEDULE)
