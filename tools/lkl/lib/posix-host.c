@@ -227,9 +227,10 @@ static void lkl_mutex_lock(struct lkl_mutex *mutex)
 #ifdef __FIBER__
         int err;
 
-        if (mutex->recursive)
-                mutex_acquire(&mutex->mutex);
-        else {
+        if (mutex->recursive) {
+                if (!is_mutex_held(&mutex->mutex))
+                        mutex_acquire(&mutex->mutex);
+        } else {
                 do {
                         thread_yield();
                         err = sem_wait(&mutex->sem);
@@ -244,7 +245,8 @@ static void lkl_mutex_unlock(struct lkl_mutex *_mutex)
 {
 #ifdef __FIBER__
         if (_mutex->recursive)
-                mutex_release(&_mutex->mutex);
+                if (!is_mutex_held(&_mutex->mutex))
+                        mutex_release(&_mutex->mutex);
         else
                 sem_post(&_mutex->sem, 1);
 #else
