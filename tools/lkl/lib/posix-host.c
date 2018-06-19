@@ -244,10 +244,10 @@ static void lkl_mutex_lock(struct lkl_mutex *mutex)
 static void lkl_mutex_unlock(struct lkl_mutex *_mutex)
 {
 #ifdef __FIBER__
-        if (_mutex->recursive)
+        if (_mutex->recursive) {
                 if (!is_mutex_held(&_mutex->mutex))
                         mutex_release(&_mutex->mutex);
-        else
+        } else
                 sem_post(&_mutex->sem, 1);
 #else
 	pthread_mutex_t *mutex = &_mutex->mutex;
@@ -335,9 +335,9 @@ static lkl_thread_t lkl_thread_create(void (*fn)(void *), void *arg)
 {
 #ifdef __FIBER__
         thread_t *thread = thread_create("lkl", (int (*)(void *))fn, arg, DEFAULT_PRIORITY, 2*1024*1024);
-        if (!thread)
+        if (!thread) {
                 return 0;
-        else {
+        } else {
                 thread_resume(thread);
                 return (lkl_thread_t) thread;
         }
