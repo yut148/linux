@@ -5,4 +5,5 @@ liblkl-$(LKL_HOST_CONFIG_FIBER) += kernel/event.o
 liblkl-$(LKL_HOST_CONFIG_FIBER) += kernel/mutex.o
 liblkl-$(LKL_HOST_CONFIG_FIBER) += kernel/semaphore.o
 liblkl-$(LKL_HOST_CONFIG_FIBER) += kernel/thread.o
+liblkl-$(LKL_HOST_CONFIG_FIBER) += kernel/timer.o
 

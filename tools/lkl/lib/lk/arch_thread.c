@@ -49,6 +49,7 @@ void arch_dump_thread(thread_t *t) {
 
 }
 
+#if 0
 void timer_initialize(lk_timer_t *timer) {
     assert(0);
 }
@@ -61,3 +62,4 @@ void timer_cancel(lk_timer_t *timer) {
 void timer_set_periodic(lk_timer_t *timer, lk_time_t period, timer_callback callback, void *arg) {
     assert(0);
 }
+#endif
