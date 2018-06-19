@@ -317,7 +317,6 @@ void lkl_thread_init(void)
         if (timer_create(CLOCK_REALTIME, &sigevp, &timerid) < 0) {
                 perror("timer_create error");
                 exit(1);
-
         }
 
         ispec.it_interval.tv_sec = 0;
@@ -485,19 +484,21 @@ static int timer_thread(void *pdata)
 
 static void *timer_alloc(void (*fn)(void *), void *arg)
 {
+	int err;
+	struct sigevent se =  {
+		.sigev_notify = SIGEV_THREAD,
+		.sigev_value = {
+			.sival_ptr = arg,
+		},
+		.sigev_notify_function = (void (*)(union sigval))fn,
+	};
 #ifdef __FIBER__
-        int err;
-        struct sigevent se = {
-                .sigev_notify = SIGEV_THREAD,
-                .sigev_value = {
-                        .sival_ptr = arg,
-                },
-        };
-
         ltimer_t *timer = malloc(sizeof(ltimer_t));
 
-        if (!timer)
+        if (!timer) {
+                lkl_printf("malloc: %s\n", strerror(errno));
                 return NULL;
+        }
 
         timer->fn = fn;
         timer->arg = arg;
@@ -506,23 +507,17 @@ static void *timer_alloc(void (*fn)(void *), void *arg)
 
         err = timer_create(CLOCK_REALTIME, &se, &timer->timerid);
 
-        if (err)
+        if (err) {
+                lkl_printf("timer_create: %s\n", strerror(errno));
                 return NULL;
+        }
 
-        timer->thread = thread_create("timer", timer_thread, timer, DEFAULT_PRIORITY, 1*1024*1024);
+        timer->thread = thread_create("timer", timer_thread, timer, DEFAULT_PRIORITY, 2*1024*1024);
         thread_detach_and_resume(timer->thread);
 
         return (void *)timer;
 #else
-	int err;
 	timer_t timer;
-	struct sigevent se =  {
-		.sigev_notify = SIGEV_THREAD,
-		.sigev_value = {
-			.sival_ptr = arg,
-		},
-		.sigev_notify_function = (void (*)(union sigval))fn,
-	};
 
 	err = timer_create(CLOCK_REALTIME, &se, &timer);
 	if (err)
@@ -534,24 +529,18 @@ static void *timer_alloc(void (*fn)(void *), void *arg)
 
 static int timer_set_oneshot(void *_timer, unsigned long ns)
 {
-#ifdef __FIBER__
-        ltimer_t *timer = _timer;
         struct itimerspec ts = {
                 .it_value = {
                         .tv_sec = ns / 1000000000,
                         .tv_nsec = ns % 1000000000,
                 },
         };
+#ifdef __FIBER__
+        ltimer_t *timer = _timer;
 
         return timer_settime(timer->timerid, 0, &ts, NULL);
 #else
 	timer_t timer = (timer_t)(long)_timer;
-	struct itimerspec ts = {
-		.it_value = {
-			.tv_sec = ns / 1000000000,
-			.tv_nsec = ns % 1000000000,
-		},
-	};
 
 	return timer_settime(timer, 0, &ts, NULL);
 #endif /* __FIBER__ */
@@ -560,12 +549,15 @@ static int timer_set_oneshot(void *_timer, unsigned long ns)
 static void timer_free(void *_timer)
 {
 #ifdef __FIBER__
+        int err;
         ltimer_t *timer = _timer;
-
-        timer_delete(timer->timerid);
 
         timer->request_stop = 1;
         event_signal(&timer->cond, 1);
+
+        err = timer_delete(timer->timerid);
+        if (err)
+                lkl_printf("timer_delete: %s\n", strerror(errno));
 #else
 	timer_t timer = (timer_t)(long)_timer;
 
