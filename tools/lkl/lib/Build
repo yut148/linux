@@ -15,6 +15,7 @@ liblkl-$(LKL_HOST_CONFIG_FIBER) += lk/kernel/event.o
 liblkl-$(LKL_HOST_CONFIG_FIBER) += lk/kernel/mutex.o
 liblkl-$(LKL_HOST_CONFIG_FIBER) += lk/kernel/semaphore.o
 liblkl-$(LKL_HOST_CONFIG_FIBER) += lk/kernel/thread.o
+liblkl-$(LKL_HOST_CONFIG_FIBER) += lk/kernel/timer.o
 liblkl-y += utils.o
 liblkl-y += virtio_blk.o
 liblkl-y += virtio.o
