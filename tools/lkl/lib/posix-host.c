@@ -46,13 +46,13 @@ static void print(const char *str, int len)
 }
 
 struct lkl_mutex {
-#ifndef __FIBER__
-       pthread_mutex_t mutex;
-#else
+#ifdef __FIBER__
        int recursive;
        mutex_t mutex;
        semaphore_t sem;
-#endif
+#else
+       pthread_mutex_t mutex;
+#endif /* __FIBER__ */
 };
 
 struct lkl_sem {
@@ -70,11 +70,11 @@ struct lkl_sem {
 };
 
 struct lkl_tls_key {
-#ifndef __FIBER__
-	pthread_key_t key;
-#else
+#ifdef __FIBER__
         uint key;
-#endif
+#else
+	pthread_key_t key;
+#endif /* __FIBER__ */
 };
 
 #define WARN_UNLESS(exp) do {						\
