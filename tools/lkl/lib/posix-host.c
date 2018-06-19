@@ -3,6 +3,7 @@
 #include <lk/kernel/mutex.h>
 #include <lk/kernel/thread.h>
 #include <lk/kernel/event.h>
+#include <lk/kernel/timer.h>
 #else
 #include <pthread.h>
 #endif
@@ -450,40 +451,23 @@ static unsigned long long time_ns(void)
 	return 1e9*ts.tv_sec + ts.tv_nsec;
 }
 
-#ifdef __FIBER__
-
-typedef struct {
-        /* event */
-        timer_t timerid;
-        void (*fn)(void *);
-        void *arg;
-        event_t cond;
-        thread_t *thread;
-
-        int request_stop;
-} ltimer_t;
-
-static int timer_thread(void *pdata)
+static void *lkl_timer_alloc(void (*fn)(void *), void *arg)
 {
-        ltimer_t *timer = pdata;
+#ifdef __FIBER__
+        lk_timer_t *timer = malloc(sizeof(lk_timer_t));
 
-        while (!timer->request_stop) {
-                event_wait(&timer->cond);
-                if (timer->request_stop)
-                        break;
-
-                timer->fn(timer->arg);
+        if (!timer) {
+                lkl_printf("malloc: %s\n", strerror(errno));
+                return NULL;
         }
 
-        event_destroy(&timer->cond);
-        free(timer);
+        timer_initialize(timer);
 
-        return 0;
-}
-#endif
+        timer->callback = fn;
+        timer->arg = arg;
 
-static void *timer_alloc(void (*fn)(void *), void *arg)
-{
+        return (void *)timer;
+#else
 	int err;
 	struct sigevent se =  {
 		.sigev_notify = SIGEV_THREAD,
@@ -492,31 +476,6 @@ static void *timer_alloc(void (*fn)(void *), void *arg)
 		},
 		.sigev_notify_function = (void (*)(union sigval))fn,
 	};
-#ifdef __FIBER__
-        ltimer_t *timer = malloc(sizeof(ltimer_t));
-
-        if (!timer) {
-                lkl_printf("malloc: %s\n", strerror(errno));
-                return NULL;
-        }
-
-        timer->fn = fn;
-        timer->arg = arg;
-        timer->request_stop = 0;
-        event_init(&timer->cond, 0, EVENT_FLAG_AUTOUNSIGNAL);
-
-        err = timer_create(CLOCK_REALTIME, &se, &timer->timerid);
-
-        if (err) {
-                lkl_printf("timer_create: %s\n", strerror(errno));
-                return NULL;
-        }
-
-        timer->thread = thread_create("timer", timer_thread, timer, DEFAULT_PRIORITY, 2*1024*1024);
-        thread_detach_and_resume(timer->thread);
-
-        return (void *)timer;
-#else
 	timer_t timer;
 
 	err = timer_create(CLOCK_REALTIME, &se, &timer);
@@ -527,37 +486,34 @@ static void *timer_alloc(void (*fn)(void *), void *arg)
 #endif /* __FIBER__ */
 }
 
-static int timer_set_oneshot(void *_timer, unsigned long ns)
+static int lkl_timer_set_oneshot(void *_timer, unsigned long ns)
 {
+#ifdef __FIBER__
+        lk_timer_t *timer = _timer;
+        lk_time_t delay = ns / 1000000;
+
+        timer_set_oneshot(timer, delay, timer->callback, timer->arg);
+
+        return 0;
+#else
         struct itimerspec ts = {
                 .it_value = {
                         .tv_sec = ns / 1000000000,
                         .tv_nsec = ns % 1000000000,
                 },
         };
-#ifdef __FIBER__
-        ltimer_t *timer = _timer;
-
-        return timer_settime(timer->timerid, 0, &ts, NULL);
-#else
 	timer_t timer = (timer_t)(long)_timer;
 
 	return timer_settime(timer, 0, &ts, NULL);
 #endif /* __FIBER__ */
 }
 
-static void timer_free(void *_timer)
+static void lkl_timer_free(void *_timer)
 {
 #ifdef __FIBER__
-        int err;
-        ltimer_t *timer = _timer;
+        lk_timer_t *timer = _timer;
 
-        timer->request_stop = 1;
-        event_signal(&timer->cond, 1);
-
-        err = timer_delete(timer->timerid);
-        if (err)
-                lkl_printf("timer_delete: %s\n", strerror(errno));
+        timer_cancel(timer);
 #else
 	timer_t timer = (timer_t)(long)_timer;
 
@@ -600,9 +556,9 @@ struct lkl_host_operations lkl_host_ops = {
 	.tls_set = tls_set,
 	.tls_get = tls_get,
 	.time = time_ns,
-	.timer_alloc = timer_alloc,
-	.timer_set_oneshot = timer_set_oneshot,
-	.timer_free = timer_free,
+	.timer_alloc = lkl_timer_alloc,
+	.timer_set_oneshot = lkl_timer_set_oneshot,
+	.timer_free = lkl_timer_free,
 	.print = print,
 	.mem_alloc = malloc,
 	.mem_free = free,
