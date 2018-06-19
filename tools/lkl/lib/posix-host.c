@@ -401,44 +401,44 @@ static int lkl_thread_equal(lkl_thread_t a, lkl_thread_t b)
 static struct lkl_tls_key *tls_alloc(void (*destructor)(void *))
 {
 	struct lkl_tls_key *ret = malloc(sizeof(struct lkl_tls_key));
-#ifndef __FIBER__
+#ifdef __FIBER__
+        get_current_thread()->tls[ret->key] = (uintptr_t)ret;
+#else
 	if (WARN_PTHREAD(pthread_key_create(&ret->key, destructor))) {
 		free(ret);
 		return NULL;
 	}
-#else
-        get_current_thread()->tls[ret->key] = (uintptr_t)NULL;
 #endif /* __FIBER__ */
 	return ret;
 }
 
 static void tls_free(struct lkl_tls_key *key)
 {
-#ifndef __FIBER__
-	WARN_PTHREAD(pthread_key_delete(key->key));
-#else
+#ifdef __FIBER__
         get_current_thread()->tls[key->key] = (uintptr_t)NULL;
+#else
+	WARN_PTHREAD(pthread_key_delete(key->key));
 #endif /* __FIBER__ */
 	free(key);
 }
 
 static int tls_set(struct lkl_tls_key *key, void *data)
 {
-#ifndef __FIBER__
+#ifdef __FIBER__
+        get_current_thread()->tls[key->key] = (uintptr_t)data;
+#else
 	if (WARN_PTHREAD(pthread_setspecific(key->key, data)))
 		return -1;
-#else
-        get_current_thread()->tls[key->key] = (uintptr_t)data;
 #endif /* __FIBER__ */
 	return 0;
 }
 
 static void *tls_get(struct lkl_tls_key *key)
 {
-#ifndef __FIBER__
-	return pthread_getspecific(key->key);
-#else
+#ifdef __FIBER__
         return (void *)get_current_thread()->tls[key->key];
+#else
+	return pthread_getspecific(key->key);
 #endif /* __FIBER__ */
 }
 
