@@ -451,8 +451,69 @@ static unsigned long long time_ns(void)
 	return 1e9*ts.tv_sec + ts.tv_nsec;
 }
 
+#ifdef __FIBER__
+
+typedef struct {
+        /* event */
+        timer_t timerid;
+        void (*fn)(void *);
+        void *arg;
+        event_t cond;
+        thread_t *thread;
+
+        int request_stop;
+} ltimer_t;
+
+static int timer_thread(void *pdata)
+{
+        ltimer_t *timer = pdata;
+
+        while (!timer->request_stop) {
+                event_wait(&timer->cond);
+                if (timer->request_stop)
+                        break;
+
+                timer->fn(timer->arg);
+        }
+
+        event_destroy(&timer->cond);
+        free(timer);
+
+        return 0;
+}
+#endif
+
 static void *timer_alloc(void (*fn)(void *), void *arg)
 {
+#ifdef __FIBER__
+        int err;
+        struct sigevent se = {
+                .sigev_notify = SIGEV_THREAD,
+                .sigev_value = {
+                        .sival_ptr = arg,
+                },
+        };
+
+        ltimer_t *timer = malloc(sizeof(ltimer_t));
+
+        if (!timer)
+                return NULL;
+
+        timer->fn = fn;
+        timer->arg = arg;
+        timer->request_stop = 0;
+        event_init(&timer->cond, 0, EVENT_FLAG_AUTOUNSIGNAL);
+
+        err = timer_create(CLOCK_REALTIME, &se, &timer->timerid);
+
+        if (err)
+                return NULL;
+
+        timer->thread = thread_create("timer", timer_thread, timer, DEFAULT_PRIORITY, 1*1024*1024);
+        thread_detach_and_resume(timer->thread);
+
+        return (void *)timer;
+#else
 	int err;
 	timer_t timer;
 	struct sigevent se =  {
@@ -468,10 +529,22 @@ static void *timer_alloc(void (*fn)(void *), void *arg)
 		return NULL;
 
 	return (void *)(long)timer;
+#endif /* __FIBER__ */
 }
 
 static int timer_set_oneshot(void *_timer, unsigned long ns)
 {
+#ifdef __FIBER__
+        ltimer_t *timer = _timer;
+        struct itimerspec ts = {
+                .it_value = {
+                        .tv_sec = ns / 1000000000,
+                        .tv_nsec = ns % 1000000000,
+                },
+        };
+
+        return timer_settime(timer->timerid, 0, &ts, NULL);
+#else
 	timer_t timer = (timer_t)(long)_timer;
 	struct itimerspec ts = {
 		.it_value = {
@@ -481,13 +554,23 @@ static int timer_set_oneshot(void *_timer, unsigned long ns)
 	};
 
 	return timer_settime(timer, 0, &ts, NULL);
+#endif /* __FIBER__ */
 }
 
 static void timer_free(void *_timer)
 {
+#ifdef __FIBER__
+        ltimer_t *timer = _timer;
+
+        timer_delete(timer->timerid);
+
+        timer->request_stop = 1;
+        event_signal(&timer->cond, 1);
+#else
 	timer_t timer = (timer_t)(long)_timer;
 
 	timer_delete(timer);
+#endif /* __FIBER__ */
 }
 
 static void lkl_panic(void)
