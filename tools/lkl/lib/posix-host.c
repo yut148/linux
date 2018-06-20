@@ -302,6 +302,7 @@ void lkl_thread_init(void)
 {
         thread_init_early();
         thread_init();
+        timer_init();
         thread_create_idle();
         thread_set_priority(DEFAULT_PRIORITY);
 

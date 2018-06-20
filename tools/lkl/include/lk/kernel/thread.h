@@ -68,7 +68,7 @@ enum thread_tls_list {
 #ifdef WITH_LIB_LKUSER
     TLS_ENTRY_LKUSER,
 #endif
-    MAX_TLS_ENTRY
+    MAX_TLS_ENTRY = 4
 };
 
 #define THREAD_FLAG_DETACHED                  (1<<0)

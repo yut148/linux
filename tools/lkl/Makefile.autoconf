@@ -14,7 +14,7 @@ define find_include
 endef
 
 define is_defined
-$(shell $(CC) -dM -E - </dev/null | grep $(1))
+$(shell $(CC) -D__FIBER__ -dM -E - </dev/null | grep $(1))
 endef
 
 define android_host
@@ -28,6 +28,7 @@ endef
 define fiber_host
   $(call set_autoconf_var,FIBER,y)
   LDFLAGS += -lrt
+  CFLAGS += -D__FIBER__
 endef
 
 define virtio_net_dpdk
