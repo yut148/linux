@@ -445,11 +445,15 @@ static void *tls_get(struct lkl_tls_key *key)
 
 static unsigned long long time_ns(void)
 {
+#ifdef __FIBER__
+        return current_time()*1000000UL;
+#else
 	struct timespec ts;
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	return 1e9*ts.tv_sec + ts.tv_nsec;
+#endif /* __FIBER__ */
 }
 
 static void *lkl_timer_alloc(void (*fn)(void *), void *arg)
