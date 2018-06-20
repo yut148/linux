@@ -533,11 +533,15 @@ static void lkl_panic(void)
 
 static long _gettid(void)
 {
+#ifdef __FIBER__
+        return (long)get_current_thread();
+#else
 #ifdef	__FreeBSD__
 	return (long)pthread_self();
 #else
 	return syscall(SYS_gettid);
 #endif
+#endif /* __FIBER__ */
 }
 
 struct lkl_host_operations lkl_host_ops = {
