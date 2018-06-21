@@ -19,12 +19,20 @@
 #include <lk/kernel/semaphore.h>
 #include <lk/kernel/thread.h>
 
+#ifdef __EMSCRIPTEN__
+void lk_sem_init(semaphore_t *sem, unsigned int value)
+#else
 void sem_init(semaphore_t *sem, unsigned int value)
+#endif
 {
     *sem = (semaphore_t)SEMAPHORE_INITIAL_VALUE(*sem, value);
 }
 
+#ifdef __EMSCRIPTEN__
+void lk_sem_destroy(semaphore_t *sem)
+#else
 void sem_destroy(semaphore_t *sem)
+#endif
 {
     THREAD_LOCK(state);
     sem->count = 0;
@@ -32,7 +40,11 @@ void sem_destroy(semaphore_t *sem)
     THREAD_UNLOCK(state);
 }
 
+#ifdef __EMSCRIPTEN__
+int lk_sem_post(semaphore_t *sem, bool resched)
+#else
 int sem_post(semaphore_t *sem, bool resched)
+#endif
 {
     int ret = 0;
 
@@ -50,7 +62,11 @@ int sem_post(semaphore_t *sem, bool resched)
     return ret;
 }
 
+#ifdef __EMSCRIPTEN__
+status_t lk_sem_wait(semaphore_t *sem)
+#else
 status_t sem_wait(semaphore_t *sem)
+#endif
 {
     status_t ret = NO_ERROR;
     THREAD_LOCK(state);
@@ -66,7 +82,11 @@ status_t sem_wait(semaphore_t *sem)
     return ret;
 }
 
+#ifdef __EMSCRIPTEN__
+status_t lk_sem_trywait(semaphore_t *sem)
+#else
 status_t sem_trywait(semaphore_t *sem)
+#endif
 {
     status_t ret = NO_ERROR;
     THREAD_LOCK(state);
@@ -80,7 +100,11 @@ status_t sem_trywait(semaphore_t *sem)
     return ret;
 }
 
+#ifdef __EMSCRIPTEN__
+status_t lk_sem_timedwait(semaphore_t *sem, lk_time_t timeout)
+#else
 status_t sem_timedwait(semaphore_t *sem, lk_time_t timeout)
+#endif
 {
     status_t ret = NO_ERROR;
     THREAD_LOCK(state);

@@ -38,12 +38,21 @@ typedef struct semaphore {
     .wait = WAIT_QUEUE_INITIAL_VALUE((s).wait), \
 }
 
+#ifdef __EMSCRIPTEN__
+void lk_sem_init(semaphore_t *, unsigned int);
+void lk_sem_destroy(semaphore_t *);
+int lk_sem_post(semaphore_t *, bool resched);
+status_t lk_sem_wait(semaphore_t *);
+status_t lk_sem_trywait(semaphore_t *);
+status_t lk_sem_timedwait(semaphore_t *, lk_time_t);
+#else
 void sem_init(semaphore_t *, unsigned int);
 void sem_destroy(semaphore_t *);
 int sem_post(semaphore_t *, bool resched);
 status_t sem_wait(semaphore_t *);
 status_t sem_trywait(semaphore_t *);
 status_t sem_timedwait(semaphore_t *, lk_time_t);
+#endif
 
 __END_CDECLS;
 #endif

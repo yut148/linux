@@ -8,6 +8,10 @@
 #include <pthread.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include <stdlib.h>
 #include <sys/time.h>
 #include <time.h>
@@ -106,7 +110,11 @@ static struct lkl_sem *lkl_sem_alloc(int count)
 		return NULL;
 
 #ifdef __FIBER__
+#ifdef __EMSCRIPTEN__
+        lk_sem_init(&sem->sem, count);
+#else
         sem_init(&sem->sem, count);
+#endif /* __EMSCRIPTEN__ */
 #else
 #ifdef _POSIX_SEMAPHORES
 	if (sem_init(&sem->sem, SHARE_SEM, count) < 0) {
@@ -127,7 +135,11 @@ static struct lkl_sem *lkl_sem_alloc(int count)
 static void lkl_sem_free(struct lkl_sem *sem)
 {
 #ifdef __FIBER__
+#ifdef __EMSCRIPTEN__
+        lk_sem_destroy(&sem->sem);
+#else
         sem_destroy(&sem->sem);
+#endif /* __EMSCRIPTEN__ */
 #else
 #ifdef _POSIX_SEMAPHORES
 	WARN_UNLESS(sem_destroy(&sem->sem));
@@ -142,7 +154,11 @@ static void lkl_sem_free(struct lkl_sem *sem)
 static void lkl_sem_up(struct lkl_sem *sem)
 {
 #ifdef __FIBER__
+#ifdef __EMSCRIPTEN__
+        lk_sem_post(&sem->sem, 1);
+#else
         sem_post(&sem->sem, 1);
+#endif /* __EMSCRIPTEN__ */
 #else
 #ifdef _POSIX_SEMAPHORES
 	WARN_UNLESS(sem_post(&sem->sem));
@@ -163,7 +179,11 @@ static void lkl_sem_down(struct lkl_sem *sem)
         int err;
         do {
                 thread_yield();
+#ifdef __EMSCRIPTEN__
+                err = lk_sem_wait(&sem->sem);
+#else
                 err = sem_wait(&sem->sem);
+#endif /* __EMSCRIPTEN__ */
         } while (err < 0);
 #else
 #ifdef _POSIX_SEMAPHORES
@@ -194,7 +214,11 @@ static struct lkl_mutex *lkl_mutex_alloc(int recursive)
         if (recursive)
                 mutex_init(&_mutex->mutex);
         else
+#ifdef __EMSCRIPTEN__
+                lk_sem_init(&_mutex->sem, 1);
+#else
                 sem_init(&_mutex->sem, 1);
+#endif /* __EMSCRIPTEN__ */
         _mutex->recursive = recursive;
 #else 
 	pthread_mutex_t *mutex = NULL;
@@ -234,7 +258,11 @@ static void lkl_mutex_lock(struct lkl_mutex *mutex)
         } else {
                 do {
                         thread_yield();
+#ifdef __EMSCRIPTEN__
+                        err = lk_sem_wait(&mutex->sem);
+#else
                         err = sem_wait(&mutex->sem);
+#endif /* __EMSCRIPTEN__ */
                 } while (err < 0);
         }
 #else
@@ -249,7 +277,11 @@ static void lkl_mutex_unlock(struct lkl_mutex *_mutex)
                 if (!is_mutex_held(&_mutex->mutex))
                         mutex_release(&_mutex->mutex);
         } else
+#ifdef __EMSCRIPTEN__
+                lk_sem_post(&_mutex->sem, 1);
+#else
                 sem_post(&_mutex->sem, 1);
+#endif /* __EMSCRIPTEN__ */
 #else
 	pthread_mutex_t *mutex = &_mutex->mutex;
 	WARN_PTHREAD(pthread_mutex_unlock(mutex));
@@ -262,7 +294,11 @@ static void lkl_mutex_free(struct lkl_mutex *_mutex)
         if (_mutex->recursive)
                 mutex_destroy(&_mutex->mutex);
         else
+#ifdef __EMSCRIPTEN__
+                lk_sem_destroy(&_mutex->sem);
+#else
                 sem_destroy(&_mutex->sem);
+#endif /* __EMSCRIPTEN__ */
 #else
 	pthread_mutex_t *mutex = &_mutex->mutex;
 	WARN_PTHREAD(pthread_mutex_destroy(mutex));
@@ -275,10 +311,12 @@ static void lkl_mutex_free(struct lkl_mutex *_mutex)
  * Most of the code comes from
  * http://linux-biyori.sakura.ne.jp/program/pr_signal02.php
  */
+#ifndef __EMSCRIPTEN__
 static struct sigaction sigact;
 static struct sigevent sigevp;
 static struct itimerspec ispec;
 static timer_t timerid = 0;
+#endif
 static volatile lk_time_t ticks = 0;
 
 static void lkl_timer_callback(int signum, siginfo_t *info, void *ctx)
@@ -288,12 +326,12 @@ static void lkl_timer_callback(int signum, siginfo_t *info, void *ctx)
                 thread_preempt();
 }
 
-lk_time_t current_time(void)
+lk_time_t lkl_current_time(void)
 {
         return ticks;
 }
 
-lk_bigtime_t current_time_hires(void)
+lk_bigtime_t lkl_current_time_hires(void)
 {
         return (lk_bigtime_t)ticks * 1000;
 }
@@ -306,6 +344,12 @@ void lkl_thread_init(void)
         thread_create_idle();
         thread_set_priority(DEFAULT_PRIORITY);
 
+#ifdef __EMSCRIPTEN__
+        lkl_timer_callback(0, NULL, NULL);
+        EM_ASM({
+                setInterval(_lkl_timer_callback, 10);
+        });
+#else
         sigact.sa_sigaction = lkl_timer_callback;
         sigact.sa_flags = SA_SIGINFO | SA_RESTART;
         sigemptyset(&sigact.sa_mask);
@@ -329,6 +373,7 @@ void lkl_thread_init(void)
                 perror("timer_settime error");
                 exit(1);
         }
+#endif /* __EMSCRIPTEN__ */
 }
 #endif
 
@@ -446,7 +491,7 @@ static void *tls_get(struct lkl_tls_key *key)
 static unsigned long long time_ns(void)
 {
 #ifdef __FIBER__
-        return current_time()*1000000UL;
+        return lkl_current_time()*1000000UL;
 #else
 	struct timespec ts;
 
