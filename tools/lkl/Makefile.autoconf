@@ -9,7 +9,7 @@ define set_autoconf_var
 endef
 
 define find_include
-  $(eval include_paths=$(shell $(CC) -E -Wp,-v -xc /dev/null 2>&1 | grep '^ '))
+  $(eval include_paths=$(shell touch /tmp/a.c ; $(CC) -E -Wp,-v /tmp/a.c 2>&1 | grep '^ '))
   $(foreach f, $(include_paths), $(wildcard $(f)/$(1)))
 endef
 
@@ -52,7 +52,6 @@ endef
 
 define posix_host
   $(call set_autoconf_var,POSIX,y)
-  $(call set_autoconf_var,VIRTIO_NET,y)
   LDFLAGS += -pie -pthread
   CFLAGS += -fPIC
   SOSUF := .so

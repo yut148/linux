@@ -112,9 +112,11 @@ LKL_TEST_CALL(umask2, lkl_sys_umask, 0777, 0);
 LKL_TEST_CALL(open, lkl_sys_open, 0, "/file", LKL_O_RDWR, 0);
 static const char wrbuf[] = "test";
 LKL_TEST_CALL(write, lkl_sys_write, sizeof(wrbuf), 0, wrbuf, sizeof(wrbuf));
+#ifndef __EMSCRIPTEN__
 LKL_TEST_CALL(lseek_cur, lkl_sys_lseek, sizeof(wrbuf), 0, 0, LKL_SEEK_CUR);
 LKL_TEST_CALL(lseek_end, lkl_sys_lseek, sizeof(wrbuf), 0, 0, LKL_SEEK_END);
 LKL_TEST_CALL(lseek_set, lkl_sys_lseek, 0, 0, 0, LKL_SEEK_SET);
+#endif
 
 int lkl_test_read(void)
 {
@@ -407,6 +409,7 @@ static void test_thread(void *data)
 		lkl_test_logf("%s: %s\n", __func__, lkl_strerror(ret));
 }
 
+#ifndef __EMSCRIPTEN__
 static int lkl_test_syscall_thread(void)
 {
 	int pipe_fds[2];
@@ -449,6 +452,7 @@ static int lkl_test_syscall_thread(void)
 
 	return TEST_SUCCESS;
 }
+#endif
 
 #ifndef __MINGW32__
 static void thread_get_pid(void *unused)
@@ -515,9 +519,11 @@ struct lkl_test tests[] = {
 	LKL_TEST(failopen),
 	LKL_TEST(open),
 	LKL_TEST(write),
+#ifndef __EMSCRIPTEN__
 	LKL_TEST(lseek_cur),
 	LKL_TEST(lseek_end),
 	LKL_TEST(lseek_set),
+#endif
 	LKL_TEST(read),
 	LKL_TEST(fstat),
 	LKL_TEST(mkdir),

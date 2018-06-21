@@ -254,85 +254,11 @@ ${MAKE} -f "${srctree}/scripts/Makefile.build" obj=init
 
 archive_builtin
 
-if [ -e scripts/mod/modpost ]; then
-#link vmlinux.o
-info LD vmlinux.o
-modpost_link vmlinux.o
+info CLEAN obj
+python "${srctree}/clean-obj.py"
 
-# modpost vmlinux.o to check for section mismatches
-${MAKE} -f "${srctree}/scripts/Makefile.modpost" vmlinux.o
-fi
+info GEN link-vmlinux.sh
+python "${srctree}/link-vmlinux-gen.py"
 
-kallsymso=""
-kallsyms_vmlinux=""
-if [ -n "${CONFIG_KALLSYMS}" ]; then
-
-	# kallsyms support
-	# Generate section listing all symbols and add it into vmlinux
-	# It's a three step process:
-	# 1)  Link .tmp_vmlinux1 so it has all symbols and sections,
-	#     but __kallsyms is empty.
-	#     Running kallsyms on that gives us .tmp_kallsyms1.o with
-	#     the right size
-	# 2)  Link .tmp_vmlinux2 so it now has a __kallsyms section of
-	#     the right size, but due to the added section, some
-	#     addresses have shifted.
-	#     From here, we generate a correct .tmp_kallsyms2.o
-	# 3)  That link may have expanded the kernel image enough that
-	#     more linker branch stubs / trampolines had to be added, which
-	#     introduces new names, which further expands kallsyms. Do another
-	#     pass if that is the case. In theory it's possible this results
-	#     in even more stubs, but unlikely.
-	#     KALLSYMS_EXTRA_PASS=1 may also used to debug or work around
-	#     other bugs.
-	# 4)  The correct ${kallsymso} is linked into the final vmlinux.
-	#
-	# a)  Verify that the System.map from vmlinux matches the map from
-	#     ${kallsymso}.
-
-	kallsymso=.tmp_kallsyms2.o
-	kallsyms_vmlinux=.tmp_vmlinux2
-
-	# step 1
-	vmlinux_link "" .tmp_vmlinux1
-	kallsyms .tmp_vmlinux1 .tmp_kallsyms1.o
-
-	# step 2
-	vmlinux_link .tmp_kallsyms1.o .tmp_vmlinux2
-	kallsyms .tmp_vmlinux2 .tmp_kallsyms2.o
-
-	# step 3
-	size1=$(stat -c "%s" .tmp_kallsyms1.o)
-	size2=$(stat -c "%s" .tmp_kallsyms2.o)
-
-	if [ $size1 -ne $size2 ] || [ -n "${KALLSYMS_EXTRA_PASS}" ]; then
-		kallsymso=.tmp_kallsyms3.o
-		kallsyms_vmlinux=.tmp_vmlinux3
-
-		vmlinux_link .tmp_kallsyms2.o .tmp_vmlinux3
-
-		kallsyms .tmp_vmlinux3 .tmp_kallsyms3.o
-	fi
-fi
-
-info LD vmlinux
-vmlinux_link "${kallsymso}" vmlinux
-
-if [ -n "${CONFIG_BUILDTIME_EXTABLE_SORT}" ]; then
-	info SORTEX vmlinux
-	sortextable vmlinux
-fi
-
-info SYSMAP System.map
-mksysmap vmlinux System.map
-
-# step a (see comment above)
-if [ -n "${CONFIG_KALLSYMS}" ]; then
-	mksysmap ${kallsyms_vmlinux} .tmp_System.map
-
-	if ! cmp -s System.map .tmp_System.map; then
-		echo >&2 Inconsistent kallsyms data
-		echo >&2 Try "make KALLSYMS_EXTRA_PASS=1" as a workaround
-		exit 1
-	fi
-fi
+info LINK vmlinux
+bash "${srctree}/link-vmlinux.sh"
