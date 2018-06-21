@@ -23,13 +23,21 @@
 #ifndef __LK_ARCH_ARCHTHREAD_H
 #define __LK_ARCH_ARCHTHREAD_H
 
-#include <ucontext.h>
+#include <sys/ucontext.h>
+
+#ifdef __EMSCRIPTEN__
+#include <sys/types.h>
+#endif
 
 #define ARCH_DEFAULT_STACK_SIZE 4096
 #define SMP_MAX_CPUS 1
 
 struct arch_thread {
+#ifdef __EMSCRIPTEN__
+    addr_t sp;
+#else
     ucontext_t context;
+#endif
 };
 
 #endif

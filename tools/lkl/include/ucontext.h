@@ -23,6 +23,7 @@
 /* Get machine dependent definition of data structures.  */
 #include <sys/ucontext.h>
 
+#ifndef __EMSCRIPTEN__
 __BEGIN_DECLS
 
 /* Get user context and store it in variable pointed to by UCP.  */
@@ -46,5 +47,6 @@ extern void makecontext (ucontext_t *__ucp, void (*__func) (void),
 			 int __argc, ...);
 
 __END_DECLS
+#endif /* __EMSCRIPTEN__ */
 
 #endif /* ucontext.h */
