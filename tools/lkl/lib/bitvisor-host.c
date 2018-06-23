@@ -9,26 +9,16 @@
 #endif
 
 #include <stdlib.h>
-#include <sys/time.h>
-#include <time.h>
-#include <signal.h>
-#include <assert.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <time.h>
+#include <core/time.h>
+#include <core/assert.h>
+#include <core/string.h>
 #include <stdint.h>
-#include <sys/uio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/syscall.h>
-#include <poll.h>
+#include <common/types.h>
+#include <core/types.h>
+#include <core/process.h>
 #include <lkl_host.h>
 #include "iomem.h"
 #include "jmp_buf.h"
-
-/* Let's see if the host has semaphore.h */
-#include <unistd.h>
 
 #ifndef __FIBER__
 #ifdef _POSIX_SEMAPHORES
@@ -43,7 +33,7 @@ static void print(const char *str, int len)
 {
 	int ret __attribute__((unused));
 
-	ret = write(STDOUT_FILENO, str, len);
+        ret = printf(str);
 }
 
 struct lkl_mutex {
@@ -271,17 +261,10 @@ static void lkl_mutex_free(struct lkl_mutex *_mutex)
 }
 
 #ifdef __FIBER__
-/*
- * Most of the code comes from
- * http://linux-biyori.sakura.ne.jp/program/pr_signal02.php
- */
-static struct sigaction sigact;
-static struct sigevent sigevp;
-static struct itimerspec ispec;
-static timer_t timerid = 0;
+static void *handler;
 static volatile lk_time_t ticks = 0;
 
-static void lkl_timer_callback(int signum, siginfo_t *info, void *ctx)
+static void lkl_timer_callback(void *handle, void *data)
 {
         ticks += 10;
         if (thread_timer_tick()==INT_RESCHEDULE)
@@ -306,30 +289,13 @@ void lkl_thread_init(void)
         thread_create_idle();
         thread_set_priority(DEFAULT_PRIORITY);
 
-        sigact.sa_sigaction = lkl_timer_callback;
-        sigact.sa_flags = SA_SIGINFO | SA_RESTART;
-        sigemptyset(&sigact.sa_mask);
-        if (sigaction(SIGRTMIN + 1, &sigact, NULL) < 0) {
-                perror("sigaction error");
-                exit(1);
+        handler = timer_new(lkl_timer_callback, NULL);
+        if (!handler) {
+                printf("timer_new error\n");
+                exitprocess(1);
         }
 
-        sigevp.sigev_notify = SIGEV_SIGNAL;
-        sigevp.sigev_signo = SIGRTMIN + 1;
-        if (timer_create(CLOCK_REALTIME, &sigevp, &timerid) < 0) {
-                perror("timer_create error");
-                exit(1);
-        }
-
-        ispec.it_interval.tv_sec = 0;
-        ispec.it_interval.tv_nsec = 10000000;
-        ispec.it_value.tv_sec = 0;
-        ispec.it_value.tv_nsec = 0;
-        if (timer_settime(timerid, 0, &ispec, NULL) < 0) {
-                perror("timer_settime error");
-                exit(1);
-        }
-}
+        timer_set(handler, 10000);
 #endif
 
 static lkl_thread_t lkl_thread_create(void (*fn)(void *), void *arg)
