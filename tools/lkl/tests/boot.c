@@ -1,9 +1,4 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <time.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <core/string.h>
 #include <lkl.h>
 #include <lkl_host.h>
 
@@ -21,7 +16,7 @@
 
 #include "test.h"
 
-#ifndef __MINGW32__
+#if !(defined(__MINGW32__) || defined(__FIBER__))
 #define sleep_ns 87654321
 int lkl_test_nanosleep(void)
 {
@@ -77,11 +72,6 @@ void check_latency(long (*f)(void), long *min, long *max, long *avg)
 
 static long native_getpid(void)
 {
-#ifdef __MINGW32__
-	GetCurrentProcessId();
-#else
-	getpid();
-#endif
 	return 0;
 }
 
@@ -550,14 +540,19 @@ struct lkl_test tests[] = {
 	LKL_TEST(stop_kernel),
 };
 
-int main(int argc, const char **argv)
+int _start(int a1, int a2)
 {
+        int ret;
 	lkl_host_ops.print = lkl_test_log;
 
 #ifdef __FIBER__
         lkl_thread_init();
 #endif
 
-	return lkl_test_run(tests, sizeof(tests)/sizeof(struct lkl_test),
+	ret = lkl_test_run(tests, sizeof(tests)/sizeof(struct lkl_test),
 			    "boot");
+
+        exitproces(ret);
+
+        return ret;
 }

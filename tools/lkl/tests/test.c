@@ -1,6 +1,7 @@
-#include <stdio.h>
-#include <stdarg.h>
-#include <time.h>
+#include <core/printf.h>
+#include <core/stdarg.h>
+#include <core/time.h>
+#include <core/types.h>
 
 #include "test.h"
 
@@ -35,7 +36,7 @@ static void print_log(void)
 		if (last == '\n')
 			printf("  ");
 		last = *head;
-		putchar(last);
+                printf("%c", last);
 		advance(&head);
 	}
 	if (last != '\n')
@@ -45,7 +46,7 @@ static void print_log(void)
 int lkl_test_run(const struct lkl_test *tests, int nr, const char *fmt, ...)
 {
 	int i, ret, status = TEST_SUCCESS;
-	clock_t start, stop;
+	u64 start, stop;
 	char name[1024];
 	va_list args;
 
@@ -59,13 +60,12 @@ int lkl_test_run(const struct lkl_test *tests, int nr, const char *fmt, ...)
 		unsigned long delta_us;
 
 		printf("* %d %s\n", i, t->name);
-		fflush(stdout);
 
-		start = clock();
+		start = get_time();
 
 		ret = t->fn(t->arg1, t->arg2, t->arg3);
 
-		stop = clock();
+		stop = get_time();
 
 		switch (ret) {
 		case TEST_SUCCESS:
@@ -95,7 +95,6 @@ int lkl_test_run(const struct lkl_test *tests, int nr, const char *fmt, ...)
 			return TEST_FAILURE;
 		}
 
-		fflush(stdout);
 	}
 
 	return status;
