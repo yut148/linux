@@ -87,6 +87,14 @@ define nt_host
   $(if $(filter $(1),pe-x86-64),$(call nt64_host))
 endef
 
+define bitvisor_host
+  $(call set_autoconf_var,BITVISOR,y)
+  LDFLAGS += -pie -pthread
+  CFLAGS += -fPIC
+  SOSUF := .so
+  $(if $(call is_defined,__FIBER__),$(call fiber_host))
+endef
+
 define do_autoconf
   export CROSS_COMPILE := $(CROSS_COMPILE)
   export CC := $(CROSS_COMPILE)gcc
@@ -95,8 +103,7 @@ define do_autoconf
   $(eval LD := $(CROSS_COMPILE)ld)
   $(eval CC := $(CROSS_COMPILE)gcc)
   $(eval LD_FMT := $(shell $(LD) -r -print-output-format))
-  $(if $(filter $(LD_FMT),$(POSIX_HOSTS)),$(call posix_host,$(LD_FMT)))
-  $(if $(filter $(LD_FMT),$(NT_HOSTS)),$(call nt_host,$(LD_FMT)))
+  $(call bitvisor_host,$(LD_FMT))
 endef
 
 export do_autoconf
