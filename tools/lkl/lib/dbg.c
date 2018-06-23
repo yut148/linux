@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <lkl.h>
 #include <limits.h>
 #include <string.h>

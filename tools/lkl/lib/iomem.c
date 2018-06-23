@@ -1,4 +1,5 @@
-#include <string.h>
+#include <common/string.h>
+#include <core/string.h>
 #include <stdint.h>
 #include <lkl_host.h>
 

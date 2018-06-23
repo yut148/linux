@@ -1,5 +1,6 @@
-#include <string.h>
-#include <stdio.h>
+#include <common/string.h>
+#include <core/string.h>
+#include <core/printf.h>
 #include "endian.h"
 #include <lkl_host.h>
 

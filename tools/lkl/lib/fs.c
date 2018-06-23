@@ -1,7 +1,8 @@
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+#include <core/printf.h>
+#include <common/string.h>
+#include <core/string.h>
+#include <core/stdarg.h>
+#include <musl/stdlib.h>
 #include <lkl_host.h>
 
 #include "virtio.h"

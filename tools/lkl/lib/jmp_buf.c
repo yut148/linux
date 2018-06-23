@@ -1,4 +1,4 @@
-#include <setjmp.h>
+#include <musl/setjmp.h>
 #include <lkl_host.h>
 
 void jmp_buf_set(struct lkl_jmp_buf *jmpb, void (*f)(void))

@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <core/mm.h>
+#include <core/string.h>
+#include <common/string.h>
 #include <lkl_host.h>
 
 #include "config.h"
@@ -22,12 +24,14 @@ static int cfgcpy(char **to, char *from)
 		return 0;
 	if (*to)
 		free(*to);
-	*to = (char *)malloc((strlen(from) + 1) * sizeof(char));
+	*to = (char *)alloc((strlen(from) + 1) * sizeof(char));
 	if (*to == NULL) {
 		lkl_printf("malloc failed\n");
 		return -1;
 	}
-	strcpy(*to, from);
+        /* XXX: This may be wrong */
+	strncpy(*to, from, strlen(to) + 1);
+        (*to)[len] = '\0';
 	return 0;
 }
 
@@ -37,7 +41,7 @@ static int cfgncpy(char **to, char *from, int len)
 		return 0;
 	if (*to)
 		free(*to);
-	*to = (char *)malloc((len + 1) * sizeof(char));
+	*to = (char *)alloc((len + 1) * sizeof(char));
 	if (*to == NULL) {
 		lkl_printf("malloc failed\n");
 		return -1;
