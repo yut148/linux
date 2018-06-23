@@ -1,5 +1,5 @@
-#include <stdlib.h>
-#include <ctype.h>
+#include <musl/stdlib.h>
+#include <musl/ctype.h>
 
 int atoi(const char *s)
 {
