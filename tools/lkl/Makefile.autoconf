@@ -90,9 +90,9 @@ endef
 define bitvisor_host
   $(call set_autoconf_var,BITVISOR,y)
   LDFLAGS += -pie
-  CFLAGS += -fPIC -I$(BITVISOR_ROOT)/include
+  CFLAGS += -D__BITVISOR__ -fPIC -I$(BITVISOR_ROOT)/include
   SOSUF := .so
-  $(if $(call is_defined,__FIBER__),$(call fiber_host))
+  $(call fiber_host)
 endef
 
 define do_autoconf
