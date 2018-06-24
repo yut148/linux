@@ -29,6 +29,7 @@ liblkl-$(LKL_HOST_CONFIG_BITVISOR) += musl/src/string/memchr.o
 liblkl-$(LKL_HOST_CONFIG_BITVISOR) += musl/src/string/strcpy.o
 liblkl-$(LKL_HOST_CONFIG_BITVISOR) += musl/src/string/strrchr.o
 liblkl-$(LKL_HOST_CONFIG_BITVISOR) += musl/src/string/strtok.o
+liblkl-$(LKL_HOST_CONFIG_BITVISOR) += musl/src/string/strtok_r.o
 liblkl-y += utils.o
 liblkl-y += virtio_blk.o
 liblkl-y += virtio.o
