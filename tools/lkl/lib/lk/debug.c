@@ -1,9 +1,6 @@
-#include <stdio.h>
-#include <stdarg.h>
+#include <core/printf.h>
+#include <core/stdarg.h>
 #include <lk/sys/types.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <inttypes.h>
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
