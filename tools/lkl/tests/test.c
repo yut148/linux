@@ -1,9 +1,8 @@
-#include <core/printf.h>
-#include <core/stdarg.h>
-#include <core/time.h>
-#include <core/types.h>
+#include <lib_printf.h>
 
 #include "test.h"
+
+#define CLOCKS_PER_SEC 1000
 
 /* circular log buffer */
 
@@ -40,7 +39,7 @@ static void print_log(void)
 		advance(&head);
 	}
 	if (last != '\n')
-		putchar('\n');
+		printf("\n");
 }
 
 int lkl_test_run(const struct lkl_test *tests, int nr, const char *fmt, ...)
@@ -61,11 +60,11 @@ int lkl_test_run(const struct lkl_test *tests, int nr, const char *fmt, ...)
 
 		printf("* %d %s\n", i, t->name);
 
-		start = get_time();
+		start = 0;
 
 		ret = t->fn(t->arg1, t->arg2, t->arg3);
 
-		stop = get_time();
+		stop = 10;
 
 		switch (ret) {
 		case TEST_SUCCESS:
@@ -109,16 +108,9 @@ void lkl_test_log(const char *str, int len)
 
 int lkl_test_logf(const char *fmt, ...)
 {
-	char tmp[1024], *c;
-	va_list args;
-	unsigned int n;
+	__builtin_va_start(args, fmt);
+	printf(fmt, args);
+	__builtin_va_end(args);
 
-	va_start(args, fmt);
-	n = vsnprintf(tmp, sizeof(tmp), fmt, args);
-	va_end(args);
-
-	for (c = tmp; *c != 0; c++)
-		log_char(*c);
-
-	return n > sizeof(tmp) ? sizeof(tmp) : n;
+        return 0;
 }
