@@ -20,29 +20,32 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-#include <asm.h>
+#include <lk/arch/x86.h>
 
 /* void x86_64_context_switch(uint64_t *oldsp, uint64_t newsp) */
-FUNCTION(x86_64_context_switch)
+void x86_64_context_switch(uint64_t *oldsp, uint64_t newsp)
+{
     /* save the old context and restore the new */
-    pushf
-    pushq %rbx
-    pushq %rbp
-    pushq %r12
-    pushq %r13
-    pushq %r14
-    pushq %r15
+    __asm__ __volatile__ (
+    "pushf\n\t"
+    "pushq %%rbx\n\t"
+    "pushq %%rbp\n\t"
+    "pushq %%r12\n\t"
+    "pushq %%r13\n\t"
+    "pushq %%r14\n\t"
+    "pushq %%r15\n\t"
 
-    movq %rsp,(%rdi)
-    movq %rsi,%rsp
+    "movq %%rsp,(%%rdi)\n\t"
+    "movq %%rsi,%%rsp\n\t"
 
-    popq %r15
-    popq %r14
-    popq %r13
-    popq %r12
-    popq %rbp
-    popq %rbx
-    popf
+    "popq %%r15\n\t"
+    "popq %%r14\n\t"
+    "popq %%r13\n\t"
+    "popq %%r12\n\t"
+    "popq %%rbp\n\t"
+    "popq %%rbx\n\t"
+    "popf\n\t"
 
-    retq
-
+    "retq\n\t"
+    );
+}
