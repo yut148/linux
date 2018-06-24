@@ -23,13 +23,13 @@
 #ifndef __LK_ARCH_ARCHTHREAD_H
 #define __LK_ARCH_ARCHTHREAD_H
 
-#include <ucontext.h>
+#include <lk/sys/types.h>
 
 #define ARCH_DEFAULT_STACK_SIZE 4096
 #define SMP_MAX_CPUS 1
 
 struct arch_thread {
-    ucontext_t context;
+    addr_t sp;
 };
 
 #endif
