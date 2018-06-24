@@ -1,7 +1,9 @@
-#include <core/string.h>
+#include <lib_string.h>
+#include <lib_syscalls.h>
 #include <lkl.h>
 #include <lkl_host.h>
 
+#ifndef __BITVISOR__
 #include <sys/stat.h>
 #include <fcntl.h>
 #if defined(__FreeBSD__)
@@ -12,6 +14,7 @@
 #include <sys/ioctl.h>
 #elif __MINGW32__
 #include <windows.h>
+#endif
 #endif
 
 #include "test.h"
@@ -552,7 +555,7 @@ int _start(int a1, int a2)
 	ret = lkl_test_run(tests, sizeof(tests)/sizeof(struct lkl_test),
 			    "boot");
 
-        exitproces(ret);
+        exitprocess(ret);
 
         return ret;
 }
