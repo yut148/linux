@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+PWD=`pwd`
+LKL="$PWD/tools/lkl"
+
+CC="emcc"
+
+CFLAGS="-s ASYNCIFY=1"
+CFLAGS="$CFLAGS -s EMULATE_FUNCTION_POINTER_CASTS=1"
+CFLAGS="$CFLAGS -s USE_PTHREADS=1"
+CFLAGS="$CFLAGS -s PTHREAD_POOL_SIZE=16"
+CFLAGS="$CFLAGS -s TOTAL_MEMORY=1342177280"
+CFLAGS="$CFLAGS -fno-short-wchar"
+CFLAGS="$CFLAGS -O0"
+CFLAGS="$CFLAGS -g4"
+
+EMCC_DEBUG=1 $CC -o js/boot.js $LKL/tests/boot-mod.ll $CFLAGS -v
