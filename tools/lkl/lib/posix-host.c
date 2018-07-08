@@ -319,7 +319,7 @@ static timer_t timerid = 0;
 #endif
 static volatile lk_time_t ticks = 0;
 
-static void lkl_timer_callback(int signum, siginfo_t *info, void *ctx)
+static void __attribute__((noinline)) lkl_timer_callback(int signum, siginfo_t *info, void *ctx)
 {
         ticks += 10;
         if (thread_timer_tick()==INT_RESCHEDULE)
@@ -345,7 +345,6 @@ void lkl_thread_init(void)
         thread_set_priority(DEFAULT_PRIORITY);
 
 #ifdef __EMSCRIPTEN__
-        lkl_timer_callback(0, NULL, NULL);
         EM_ASM({
                 setInterval(_lkl_timer_callback, 10);
         });
