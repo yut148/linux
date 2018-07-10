@@ -1,19 +1,39 @@
 #!/usr/bin/env bash
 
+PWD=`pwd`
+LKL="$PWD/tools/lkl"
+
+CC="emcc"
+CP="cp"
+DIS="llvm-dis"
+LINK="llvm-link"
+PY="python"
+
+CFLAGS="-s ASYNCIFY=1"
+CFLAGS="$CFLAGS -s EMULATE_FUNCTION_POINTER_CASTS=1"
+CFLAGS="$CFLAGS -s USE_PTHREADS=1"
+CFLAGS="$CFLAGS -s PTHREAD_POOL_SIZE=16"
+CFLAGS="$CFLAGS -s TOTAL_MEMORY=1342177280"
+CFLAGS="$CFLAGS -fno-short-wchar"
+CFLAGS="$CFLAGS -O0"
+CFLAGS="$CFLAGS -g4"
+
 echo "LINK boot.bc"
-llvm-link -o tools/lkl/tests/boot.bc tools/lkl/tests/boot-in.o tools/lkl/lib/liblkl-in.o tools/lkl/lib/lkl.o
+$LINK -o $LKL/tests/boot.bc \
+    $LKL/tests/boot-in.o $LKL/lib/liblkl-in.o $LKL/lib/lkl.o
 echo "DIS boot.bc"
-llvm-dis -o tools/lkl/tests/boot.ll tools/lkl/tests/boot.bc
-echo "SED wchar_size"
-cat tools/lkl/tests/boot.ll | sed s/\"wchar_size\",\ i32\ 2/\"wchar_size\",\ i32\ 4/g > tools/lkl/tests/boot-mod.ll
+$DIS -o $LKL/tests/boot.ll $LKL/tests/boot.bc
 mkdir -p js
-cp ~/.emscripten_cache/asmjs/dlmalloc.bc js/dlmalloc.bc
-cp ~/.emscripten_cache/asmjs/libc.bc js/libc.bc
+$CP ~/.emscripten_cache/asmjs/dlmalloc.bc js/dlmalloc.bc
+$CP ~/.emscripten_cache/asmjs/libc.bc js/libc.bc
+$CP ~/.emscripten_cache/asmjs/pthreads.bc js/pthreads.bc
 echo "DIS dlmalloc.bc"
-llvm-dis -o js/dlmalloc.ll js/dlmalloc.bc
+$DIS -o js/dlmalloc.ll js/dlmalloc.bc
 echo "DIS libc.bc"
-llvm-dis -o js/libc.ll js/libc.bc
+$DIS -o js/libc.ll js/libc.bc
+echo "DIS pthreads.bc"
+$DIS -o js/pthreads.ll js/pthreads.bc
 echo "PY rename_symbols.py"
-python rename_symbols.py tools/lkl/tests/boot-mod.ll tools/lkl/tests/boot-mod2.ll
+$PY rename_symbols.py $LKL/tests/boot.ll $LKL/tests/boot-mod.ll
 echo "EMCC boot.js"
-EMCC_DEBUG=1 emcc -o js/boot.html tools/lkl/tests/boot-mod2.ll -s EMULATE_FUNCTION_POINTER_CASTS=1 -s PTHREAD_POOL_SIZE=16 -s USE_PTHREADS=1 -s TOTAL_MEMORY=1342177280 -s ALLOW_MEMORY_GROWTH=1 -v
+EMCC_DEBUG=1 $CC -o js/boot.js $LKL/tests/boot-mod.ll $CFLAGS -v
