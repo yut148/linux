@@ -9,7 +9,9 @@ DIS="llvm-dis"
 LINK="llvm-link"
 PY="python"
 
-CFLAGS="-s ASYNCIFY=1"
+CFLAGS="-m32"
+CFLAGS="$CFLAGS -s WASM=0"
+CFLAGS="$CFLAGS -s ASYNCIFY=1"
 CFLAGS="$CFLAGS -s EMULATE_FUNCTION_POINTER_CASTS=1"
 CFLAGS="$CFLAGS -s USE_PTHREADS=1"
 CFLAGS="$CFLAGS -s PTHREAD_POOL_SIZE=16"
@@ -36,4 +38,4 @@ $DIS -o js/pthreads.ll js/pthreads.bc
 echo "PY rename_symbols.py"
 $PY rename_symbols.py $LKL/tests/boot.ll $LKL/tests/boot-mod.ll
 echo "EMCC boot.js"
-EMCC_DEBUG=1 $CC -o js/boot.js $LKL/tests/boot-mod.ll $CFLAGS -v
+EMCC_DEBUG=1 $CC -o js/boot.html $LKL/tests/boot-mod.ll $CFLAGS -v
