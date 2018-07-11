@@ -238,8 +238,10 @@ LKL_SYSCALL_DEFINE3(_syslog,int,type,char *,buf,int,len)
 #ifdef __lkl__NR_time
 LKL_SYSCALL_DEFINE1(_time,lkl_time_t *,tloc)
 #endif
+#if 0
 #ifdef __NR_stime
 LKL_SYSCALL_DEFINE1(_stime,lkl_time_t *,tptr)
+#endif
 #endif
 #ifdef __lkl__NR_gettimeofday
 LKL_SYSCALL_DEFINE2(_gettimeofday,struct lkl_timeval *,tv,struct lkl_timezone *,tz)
