@@ -74,11 +74,15 @@ int __init lkl_start_kernel(struct lkl_host_operations *ops,
 	if (ret)
 		goto out_free_init_sem;
 
+        /*
 	ret = lkl_ops->thread_create(lkl_run_kernel, NULL);
 	if (!ret) {
 		ret = -ENOMEM;
 		goto out_free_init_sem;
 	}
+        */
+
+        lkl_run_kernel(NULL);
 
 	lkl_ops->sem_down(init_sem);
 	lkl_ops->sem_free(init_sem);
