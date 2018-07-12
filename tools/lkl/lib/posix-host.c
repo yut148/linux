@@ -1,3 +1,4 @@
+#include <emscripten.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -260,41 +261,16 @@ static unsigned long long time_ns(void)
 
 static void *timer_alloc(void (*fn)(void *), void *arg)
 {
-	int err;
-	timer_t timer;
-	struct sigevent se =  {
-		.sigev_notify = SIGEV_THREAD,
-		.sigev_value = {
-			.sival_ptr = arg,
-		},
-		.sigev_notify_function = (void (*)(union sigval))fn,
-	};
-
-	err = timer_create(CLOCK_REALTIME, &se, &timer);
-	if (err)
-		return NULL;
-
-	return (void *)(long)timer;
+        return fn;
 }
 
 static int timer_set_oneshot(void *_timer, unsigned long ns)
 {
-	timer_t timer = (timer_t)(long)_timer;
-	struct itimerspec ts = {
-		.it_value = {
-			.tv_sec = ns / 1000000000,
-			.tv_nsec = ns % 1000000000,
-		},
-	};
-
-	return timer_settime(timer, 0, &ts, NULL);
+    EM_ASM({ setTimeOut($0, $1) }, _timer, ns/1000000.0);
 }
 
 static void timer_free(void *_timer)
 {
-	timer_t timer = (timer_t)(long)_timer;
-
-	timer_delete(timer);
 }
 
 static void panic(void)

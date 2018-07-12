@@ -63,12 +63,9 @@ def main():
         renamed_app.append(line)
 
     em_code = "@em_code = private unnamed_addr constant [1 x i8] zeroinitializer, align 1"
-    em_decl = "declare i32 @emscripten_asm_const_int(i8*, ...)"
 
     renamed_app.append("\n")
     renamed_app.append(em_code+"\n")
-    renamed_app.append("\n")
-    renamed_app.append(em_decl+"\n")
     renamed_app.append("\n")
     renamed_app.append("define internal i32 @null_setkey(%struct.crypto_tfm*, i8*, i32) {\n")
     renamed_app.append("  ret i32 0\n")
