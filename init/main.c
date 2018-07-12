@@ -441,17 +441,34 @@ static noinline void __ref rest_init(void)
 static int __init do_early_param(char *param, char *val,
 				 const char *unused, void *arg)
 {
-	const struct obs_kernel_param *p;
+        /* XXX: There is a lot of early_param, but hardcode in init/main.c */
+        const char *early_params[MAX_INIT_ARGS+2] = { "debug", "quiet", "loglevel", NULL, };
+        int i;
 
-	for (p = __setup_start; p < __setup_end; p++) {
-		if ((p->early && parameq(param, p->str)) ||
-		    (strcmp(param, "console") == 0 &&
-		     strcmp(p->str, "earlycon") == 0)
-		) {
-			if (p->setup_func(val) != 0)
-				pr_warn("Malformed early option '%s'\n", param);
-		}
-	}
+        for (i = 0; early_params[i]; i++) {
+                if (strcmp(param, early_params[i]) == 0 ||
+                    (strcmp(param, "console") == 0 &&
+                     strcmp(early_params[i], "earlycon") == 0)
+                ) {
+                        switch (i) {
+                                case 0: /* debug */
+                                if (debug_kernel(val) != 0)
+                                        pr_warn("Malformed early option '%s'\n", param);
+                                break;
+                                case 1: /* quiet */
+                                if (quiet_kernel(val) != 0)
+                                        pr_warn("Malformed early option '%s'\n", param);
+                                break;
+                                case 2: /* loglevel */
+                                if (loglevel(val) != 0)
+                                        pr_warn("Malformed early option '%s'\n", param);
+                                break;
+                                default:
+                                pr_warn("Unknown early option '%s'\n", param);
+                        }
+                }
+        }
+
 	/* We accept everything at this stage. */
 	return 0;
 }
