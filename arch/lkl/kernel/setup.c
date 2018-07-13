@@ -18,7 +18,8 @@ static char cmd_line[COMMAND_LINE_SIZE];
 static void *init_sem;
 static int is_running;
 void (*pm_power_off)(void) = NULL;
-static unsigned long mem_size = 64 * 1024 * 1024;
+/* XXX: Due to setup_mem_size is not callable, hardcode here */
+static unsigned long mem_size = 16 * 1024 * 1024;
 
 long lkl_panic_blink(int state)
 {
