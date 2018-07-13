@@ -266,7 +266,7 @@ static void *timer_alloc(void (*fn)(void *), void *arg)
 
 static int timer_set_oneshot(void *_timer, unsigned long ns)
 {
-    EM_ASM({ setTimeOut($0, $1) }, _timer, ns/1000000.0);
+    EM_ASM({ setTimeout($0, $1) }, _timer, ns/1000000.0);
 }
 
 static void timer_free(void *_timer)
