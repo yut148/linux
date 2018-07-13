@@ -97,6 +97,8 @@
 #include <asm/sections.h>
 #include <asm/cacheflush.h>
 
+#include <emscripten/em_asm.h>
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -442,7 +444,7 @@ static int __init do_early_param(char *param, char *val,
 				 const char *unused, void *arg)
 {
         /* XXX: There is a lot of early_param, but hardcode in init/main.c */
-        const char *early_params[MAX_INIT_ARGS+2] = { "debug", "quiet", "loglevel", NULL, };
+        const char *early_params[MAX_INIT_ARGS+2] = { "debug", "quiet", "loglevel", "mem", NULL, };
         int i;
 
         for (i = 0; early_params[i]; i++) {
@@ -461,6 +463,10 @@ static int __init do_early_param(char *param, char *val,
                                 break;
                                 case 2: /* loglevel */
                                 if (loglevel(val) != 0)
+                                        pr_warn("Malformed early option '%s'\n", param);
+                                break;
+                                case 3: /* mem */
+                                if (EM_ASM_INT({ return _early_parse_mem($0); }, val) != 0)
                                         pr_warn("Malformed early option '%s'\n", param);
                                 break;
                                 default:
