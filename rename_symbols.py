@@ -71,8 +71,16 @@ def main():
     renamed_app.append("  ret i32 0\n")
     renamed_app.append("}\n")
 
+    renamed_app2 = []
+    for line in renamed_app:
+        line = line.replace("c\"kernel_strlcat\\00\"", "c\"strlcat\\00\"")
+        line = line.replace("c\"kernel_getrusage\\00\"", "c\"getrusage\\00\"")
+        renamed_app2.append(line)
+
+    del renamed_app
+
     with open(sys.argv[2], "w") as fp:
-        for line in renamed_app:
+        for line in renamed_app2:
             fp.write(line)
 
     return 0
