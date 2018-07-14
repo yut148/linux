@@ -1083,7 +1083,10 @@ static noinline void __init kernel_init_freeable(void)
 
 	smp_prepare_cpus(setup_max_cpus);
 
+        /* XXX: As setup_per_cpu_areas is failed, disable workqueue_init */
+#if 0
 	workqueue_init();
+#endif
 
 	init_mm_internals();
 
