@@ -13,7 +13,7 @@ func_table = {
             ["HEAP32[$47>>2] = 0;\n"],
             "FUNCTION_TABLE_viii[$15 & 8191]($5,$41,$42); //@line 518 \"kernel/time/time.c\"":
             ["/* Do nothing */\n"],
-            "_panic(1188070,$vararg_buffer9); //@line 3230 \"fs/namespace.c\"":
+            "$vararg_buffer9); //@line 3230 \"fs/namespace.c\"":
             ["console.trace();\n"],
             "Module['printErr']('missing function: __compiletime_assert_3990'); abort(-1);":
             ["console.trace();\n"],
