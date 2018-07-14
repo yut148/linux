@@ -39,3 +39,5 @@ echo "PY rename_symbols.py"
 $PY rename_symbols.py $LKL/tests/boot.ll $LKL/tests/boot-mod.ll
 echo "EMCC boot.js"
 EMCC_DEBUG=1 $CC -o js/boot.html $LKL/tests/boot-mod.ll $CFLAGS -v
+echo "PY fix-js.py"
+$PY fix-js.py js/boot.js js/boot.js
