@@ -400,7 +400,11 @@ static noinline void __ref rest_init(void)
 	 * the init task will end up wanting to create kthreads, which, if
 	 * we schedule it before we create kthreadd, will OOPS.
 	 */
-	pid = kernel_thread(kernel_init, NULL, CLONE_FS);
+        /* XXX: In JS env, it can not create kernel thread,
+         * so call kernel_init directly.
+         */
+        kernel_init(NULL);
+        pid = 1;
 	/*
 	 * Pin init on the boot CPU. Task migration is not properly working
 	 * until sched_init_smp() has been run. It will set the allowed
@@ -1061,8 +1065,11 @@ static noinline void __init kernel_init_freeable(void)
 {
 	/*
 	 * Wait until kthreadd is all set-up.
+         * XXX: For single threaded, disable wait_for_completion
 	 */
+#if 0
 	wait_for_completion(&kthreadd_done);
+#endif
 
 	/* Now the scheduler is fully set up and can do blocking allocations */
 	gfp_allowed_mask = __GFP_BITS_MASK;
