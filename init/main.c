@@ -924,10 +924,245 @@ static void __init do_initcall_level(int level)
 
 static void __init do_initcalls(void)
 {
-	int level;
-
-	for (level = 0; level < ARRAY_SIZE(initcall_levels) - 1; level++)
-		do_initcall_level(level);
+        /* XXX: initcalls are broken, so hardcode here */
+        /* initcall0 */
+        EM_ASM({
+            _net_ns_init();
+        });
+        /* initcall1 */
+        EM_ASM({
+            _lkl_console_init();
+            _wq_sysfs_init();
+            _ksysfs_init();
+            _rcu_set_runtime_mode();
+            _init_jiffies_clocksource();
+            /* _init_per_zone_wmark_min(); */
+            _calibrate_xor_blocks();
+            _prandom_init();
+            /* _virtio_init(); */
+            _sock_init();
+            _net_inuse_init();
+            _net_defaults_init();
+            _init_default_flow_dissectors();
+            _netlink_proto_init();
+        });
+        /* initcall2 */
+        EM_ASM({
+            _bdi_class_init();
+            _mm_sysfs_init();
+            _tty_class_init();
+            _kobject_uevent_init();
+        });
+        /* initcall3 */
+        EM_ASM({
+        });
+        /* initcall4 */
+        EM_ASM({
+            _uid_cache_init();
+            _param_sysfs_init();
+            _user_namespace_sysctl_init();
+            _default_bdi_init();
+            _percpu_enable_async();
+            /* _init_admin_reserve(); */
+            /* _init_user_reserve(); */
+            _crypto_wq_init();
+            _cryptomgr_init();
+            _init_bio();
+            _blk_settings_init();
+            _blk_ioc_init();
+            _blk_softirq_init();
+            _blk_mq_init();
+            _genhd_device_init();
+            /* _raid6_select_algo(); */
+            _misc_init();
+            _serio_init();
+            _input_init();
+            _hwmon_init();
+            _proto_init();
+            _net_dev_init();
+            _neigh_init();
+            _fib_notifier_init();
+            _fib_rules_init();
+            _pktsched_init();
+            _genl_init();
+        });
+        /* initcall5 */
+        EM_ASM({
+            _clocksource_done_booting();
+            _init_pipe_fs();
+            _eventpoll_init();
+            _anon_inode_init();
+            _proc_nommu_init();
+            _proc_cmdline_init();
+            _proc_consoles_init();
+            _proc_cpuinfo_init();
+            _proc_devices_init();
+            _proc_interrupts_init();
+            _proc_loadavg_init();
+            _proc_meminfo_init();
+            _proc_stat_init();
+            _proc_uptime_init();
+            _proc_version_init();
+            _proc_softirqs_init();
+            _proc_kmsg_init();
+            _init_ramfs_fs();
+            _chr_dev_init();
+            _sysctl_core_init();
+            _eth_offload_init();
+            _inet_init();
+            _ipv4_offload_init();
+            _ipv6_offload_init();
+        });
+        /* initcall6 */
+        EM_ASM({
+            _proc_execdomains_init();
+            _register_warn_debugfs();
+            _ioresources_init();
+            _init_sched_debug_procfs();
+            _timekeeping_init_ops();
+            _init_clocksource_sysfs();
+            _init_timer_list_procfs();
+            _alarmtimer_init();
+            _init_posix_timers();
+            _clockevents_init_sysfs();
+            _kallsyms_init();
+            _utsname_sysctl_init();
+            /* _kswapd_init(); */
+            _slab_proc_init();
+            _workingset_init();
+            _slab_sysfs_init();
+            _fcntl_init();
+            _proc_filesystems_init();
+            _start_dirtytime_writeback();
+            _blkdev_init();
+            _dio_init();
+            _mbcache_init();
+            _init_devpts_fs();
+            _ext4_init_fs();
+            _journal_init();
+            _init_fat_fs();
+            _init_vfat_fs();
+            _init_nls_cp437();
+            _init_nls_cp737();
+            _init_nls_cp775();
+            _init_nls_cp850();
+            _init_nls_cp852();
+            _init_nls_cp855();
+            _init_nls_cp857();
+            _init_nls_cp860();
+            _init_nls_cp861();
+            _init_nls_cp862();
+            _init_nls_cp863();
+            _init_nls_cp864();
+            _init_nls_cp865();
+            _init_nls_cp866();
+            _init_nls_cp869();
+            _init_nls_cp874();
+            _init_nls_cp932();
+            _init_nls_euc_jp();
+            _init_nls_cp936();
+            _init_nls_cp949();
+            _init_nls_cp950();
+            _init_nls_cp1250();
+            _init_nls_cp1251();
+            _init_nls_ascii();
+            _init_nls_iso8859_1();
+            _init_nls_iso8859_2();
+            _init_nls_iso8859_3();
+            _init_nls_iso8859_4();
+            _init_nls_iso8859_5();
+            _init_nls_iso8859_6();
+            _init_nls_iso8859_7();
+            _init_nls_cp1255();
+            _init_nls_iso8859_9();
+            _init_nls_iso8859_13();
+            _init_nls_iso8859_14();
+            _init_nls_iso8859_15();
+            _init_nls_koi8_r();
+            _init_nls_koi8_u();
+            _init_nls_koi8_ru();
+            _init_nls_utf8();
+            _init_nls_macceltic();
+            _init_nls_maccenteuro();
+            _init_nls_maccroatian();
+            _init_nls_maccyrillic();
+            _init_nls_macgaelic();
+            _init_nls_macgreek();
+            _init_nls_maciceland();
+            _init_nls_macinuit();
+            _init_nls_macromanian();
+            _init_nls_macroman();
+            _init_nls_macturkish();
+            _init_xfs_fs();
+            _crypto_algapi_init();
+            _echainiv_module_init();
+            _hmac_module_init();
+            /* _crypto_null_mod_init(); */
+            /* _sha256_generic_mod_init(); */
+            /* _aes_init(); */
+            /* _crc32c_mod_init(); */
+            _crypto_authenc_module_init();
+            _crypto_authenc_esn_module_init();
+            /* _prng_mod_init(); */
+            /* _drbg_init(); */
+            _jent_mod_init();
+            _proc_genhd_init();
+            _noop_init();
+            _deadline_init();
+            _cfq_init();
+            _deadline_init();
+            _kyber_init();
+            _libcrc32c_mod_init();
+            _virtio_mmio_init();
+            _n_null_init();
+            _pty_init();
+            _hwrng_modinit();
+            /* _topology_sysfs_init(); */
+            _cacheinfo_sysfs_init();
+            _init();
+            _net_olddevs_init();
+            _virtio_net_driver_init();
+            _serport_init();
+            _atkbd_init();
+            _psmouse_init();
+            /* _virtio_crypto_driver_init(); */
+            _hid_init();
+            _hid_generic_init();
+            _sock_diag_init();
+            _blackhole_init();
+            _fq_module_init();
+            _gre_offload_init();
+            _sysctl_ipv4_init();
+            _xfrm4_beet_init();
+            _tunnel4_init();
+            _xfrm4_transport_init();
+            _xfrm4_mode_tunnel_init();
+            _inet_diag_init();
+            _tcp_diag_init();
+            _bbr_register();
+            _bictcp_register();
+            _cubictcp_register();
+            _tcp_westwood_register();
+            _htcp_register();
+            _inet6_init();
+            _xfrm6_transport_init();
+            _xfrm6_mode_tunnel_init();
+            _xfrm6_beet_init();
+            _sit_init();
+        });
+        /* initcall7 */
+        EM_ASM({
+            _fs_setup();
+            /* _init_oops_id(); */
+            _sched_init_debug();
+            _pm_qos_power_init();
+            _printk_late_init();
+            _init_btrfs_fs();
+            _prandom_reseed();
+            /* _deferred_probe_initcall(); */
+            _tcp_congestion_default();
+            _ip_auto_config();
+        });
 }
 
 /*
