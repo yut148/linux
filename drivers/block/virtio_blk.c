@@ -926,9 +926,6 @@ static int __init init(void)
 		goto out_destroy_workqueue;
 	}
 
-	error = register_virtio_driver(&virtio_blk);
-	if (error)
-		goto out_unregister_blkdev;
 	return 0;
 
 out_unregister_blkdev:
