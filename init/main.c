@@ -433,14 +433,6 @@ static noinline void __ref rest_init(void)
 	system_state = SYSTEM_SCHEDULING;
 
 	complete(&kthreadd_done);
-
-	/*
-	 * The boot idle thread must execute schedule()
-	 * at least once to get things moving:
-	 */
-	schedule_preempt_disabled();
-	/* Call into cpu_idle with preempt disabled */
-	cpu_startup_entry(CPUHP_ONLINE);
 }
 
 /* Check for early params. */
