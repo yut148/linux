@@ -97,6 +97,8 @@
 #include <asm/sections.h>
 #include <asm/cacheflush.h>
 
+#include <emscripten/em_asm.h>
+
 static int kernel_init(void *);
 
 extern void init_IRQ(void);
@@ -948,10 +950,12 @@ static void __init do_basic_setup(void)
 
 static void __init do_pre_smp_initcalls(void)
 {
-	initcall_t *fn;
-
-	for (fn = __initcall_start; fn < __initcall0_start; fn++)
-		do_one_initcall(*fn);
+        /* XXX: initcalls are broken, so hardcode here */
+        EM_ASM({
+                _spawn_ksoftirqd();
+                _rand_initialize();
+                _initialize_ptr_random();
+                });
 }
 
 /*
