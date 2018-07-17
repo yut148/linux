@@ -19,6 +19,8 @@ func_table = {
             ["console.trace();\n"],
             "Module['printErr']('missing function: __compiletime_assert_3991'); abort(-1);":
             ["console.trace();\n"],
+            "$vararg_buffer1); //@line 3230 \"fs/namespace.c\"":
+            ["console.trace();\n"],
         }
 
 def main():
