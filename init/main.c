@@ -1343,11 +1343,6 @@ static noinline void __init kernel_init_freeable(void)
 	if (!ramdisk_execute_command)
 		ramdisk_execute_command = "/init";
 
-	if (sys_access((const char __user *) ramdisk_execute_command, 0) != 0) {
-		ramdisk_execute_command = NULL;
-		prepare_namespace();
-	}
-
 	/*
 	 * Ok, we have completed the initial bootup, and
 	 * we're essentially up and running. Get rid of the
