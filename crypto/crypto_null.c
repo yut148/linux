@@ -65,9 +65,11 @@ static int null_hash_setkey(struct crypto_shash *tfm, const u8 *key,
 			    unsigned int keylen)
 { return 0; }
 
+#if 0
 static int null_setkey(struct crypto_tfm *tfm, const u8 *key,
 		       unsigned int keylen)
 { return 0; }
+#endif
 
 static void null_crypt(struct crypto_tfm *tfm, u8 *dst, const u8 *src)
 {
@@ -119,7 +121,7 @@ static struct crypto_alg null_algs[3] = { {
 	.cra_u			=	{ .cipher = {
 	.cia_min_keysize	=	NULL_KEY_SIZE,
 	.cia_max_keysize	=	NULL_KEY_SIZE,
-	.cia_setkey		= 	null_setkey,
+	.cia_setkey		= 	NULL,
 	.cia_encrypt		=	null_crypt,
 	.cia_decrypt		=	null_crypt } }
 }, {
@@ -135,7 +137,7 @@ static struct crypto_alg null_algs[3] = { {
 	.min_keysize		=	NULL_KEY_SIZE,
 	.max_keysize		=	NULL_KEY_SIZE,
 	.ivsize			=	NULL_IV_SIZE,
-	.setkey			= 	null_setkey,
+	.setkey			= 	NULL,
 	.encrypt		=	skcipher_null_crypt,
 	.decrypt		=	skcipher_null_crypt } }
 }, {
