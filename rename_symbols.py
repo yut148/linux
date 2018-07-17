@@ -66,10 +66,6 @@ def main():
 
     renamed_app.append("\n")
     renamed_app.append(em_code+"\n")
-    renamed_app.append("\n")
-    renamed_app.append("define internal i32 @null_setkey(%struct.crypto_tfm*, i8*, i32) {\n")
-    renamed_app.append("  ret i32 0\n")
-    renamed_app.append("}\n")
 
     renamed_app2 = []
     for line in renamed_app:
