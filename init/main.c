@@ -1179,8 +1179,8 @@ static void __init do_pre_smp_initcalls(void)
 {
         /* XXX: initcalls are broken, so hardcode here */
         EM_ASM({
-                _spawn_ksoftirqd();
-                _rand_initialize();
+                /* _spawn_ksoftirqd(); */
+                /* _rand_initialize(); */
                 _initialize_ptr_random();
                 });
 }
