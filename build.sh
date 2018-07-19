@@ -26,3 +26,4 @@ CFLAGS="$CFLAGS -g4"
 
 make -j9 -C tools/lkl CC="$CC $CFLAGS" AR="$PY $PWD/ar.py" V=1
 ./build-boot.sh
+./build-liblkl.sh
